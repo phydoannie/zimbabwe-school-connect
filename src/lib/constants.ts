@@ -51,7 +51,7 @@ export function canBulkPromote(from: string, to: string): boolean {
 export function nextGrade(g: string): string | null {
   const i = GRADES.indexOf(g);
   if (i < 0 || i === GRADES.length - 1) return null;
-  return GRADES[i + 1];
+  return GRADES[i + 1] ?? null;
 }
 
 export function money(n: number | string | null | undefined, cur = "USD") {

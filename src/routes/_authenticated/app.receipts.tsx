@@ -42,7 +42,7 @@ function Receipts() {
     const reason = prompt("Reason for voiding this receipt?");
     if (!reason) return;
     const { error } = await supabase.rpc("void_receipt", { _receipt: id, _reason: reason });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Receipt voided");
     qc.invalidateQueries();
   }

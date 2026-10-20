@@ -42,14 +42,14 @@ function Students() {
 
   async function add(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const f = Object.fromEntries(new FormData(e.currentTarget)) as Record<string, string>;
+    const f = Object.fromEntries(new FormData(e.currentTarget)) as Record<string, string | undefined>;
     const { error } = await supabase.from("students").insert({
-      school_id: school.id, reg_number: f.reg_number.trim(), first_name: f.first_name.trim(), last_name: f.last_name.trim(),
-      gender: (f.gender || null) as "M" | null, grade: f.grade, class_name: f.class_name || null, boarding: f.boarding === "on",
-      guardian_name: f.guardian_name || null, guardian_phone: f.guardian_phone || null,
-      opening_balance: Number(f.opening_balance || 0),
+      school_id: school.id, reg_number: (f["reg_number"] ?? "").trim(), first_name: (f["first_name"] ?? "").trim(), last_name: (f["last_name"] ?? "").trim(),
+      gender: (f["gender"] || null) as "M" | null, grade: f["grade"] ?? "Grade 1", class_name: f["class_name"] || null, boarding: f["boarding"] === "on",
+      guardian_name: f["guardian_name"] || null, guardian_phone: f["guardian_phone"] || null,
+      opening_balance: Number(f["opening_balance"] || 0),
     });
-    if (error) return toast.error(error.code === "23505" ? "That registration number already exists" : error.message);
+    if (error) { toast.error(error.code === "23505" ? "That registration number already exists" : error.message); return; }
     toast.success("Student added");
     setOpen(false);
     qc.invalidateQueries({ queryKey: ["students", school.id] });
