@@ -10,33 +10,155 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
+import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
+import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
+import { Route as AuthenticatedAppCollectRouteImport } from './routes/_authenticated/app.collect'
+import { Route as AuthenticatedAppDebtorsRouteImport } from './routes/_authenticated/app.debtors'
+import { Route as AuthenticatedAppReceiptsRouteImport } from './routes/_authenticated/app.receipts'
+import { Route as AuthenticatedAppStudentsRouteImport } from './routes/_authenticated/app.students'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppCollectRoute = AuthenticatedAppCollectRouteImport.update({
+  id: '/collect',
+  path: '/collect',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppDebtorsRoute = AuthenticatedAppDebtorsRouteImport.update({
+  id: '/debtors',
+  path: '/debtors',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppReceiptsRoute =
+  AuthenticatedAppReceiptsRouteImport.update({
+    id: '/receipts',
+    path: '/receipts',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppStudentsRoute =
+  AuthenticatedAppStudentsRouteImport.update({
+    id: '/students',
+    path: '/students',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/app': typeof AuthenticatedAppRouteWithChildren
+  '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/app/collect': typeof AuthenticatedAppCollectRoute
+  '/app/debtors': typeof AuthenticatedAppDebtorsRoute
+  '/app/receipts': typeof AuthenticatedAppReceiptsRoute
+  '/app/students': typeof AuthenticatedAppStudentsRoute
+  '/app/': typeof AuthenticatedAppIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/app/collect': typeof AuthenticatedAppCollectRoute
+  '/app/debtors': typeof AuthenticatedAppDebtorsRoute
+  '/app/receipts': typeof AuthenticatedAppReceiptsRoute
+  '/app/students': typeof AuthenticatedAppStudentsRoute
+  '/app': typeof AuthenticatedAppIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
+  '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
+  '/_authenticated/app/collect': typeof AuthenticatedAppCollectRoute
+  '/_authenticated/app/debtors': typeof AuthenticatedAppDebtorsRoute
+  '/_authenticated/app/receipts': typeof AuthenticatedAppReceiptsRoute
+  '/_authenticated/app/students': typeof AuthenticatedAppStudentsRoute
+  '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/reset-password'
+    | '/app'
+    | '/onboarding'
+    | '/app/collect'
+    | '/app/debtors'
+    | '/app/receipts'
+    | '/app/students'
+    | '/app/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/reset-password'
+    | '/onboarding'
+    | '/app/collect'
+    | '/app/debtors'
+    | '/app/receipts'
+    | '/app/students'
+    | '/app'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/reset-password'
+    | '/_authenticated/app'
+    | '/_authenticated/onboarding'
+    | '/_authenticated/app/collect'
+    | '/_authenticated/app/debtors'
+    | '/_authenticated/app/receipts'
+    | '/_authenticated/app/students'
+    | '/_authenticated/app/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +170,116 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/app': {
+      id: '/_authenticated/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AuthenticatedAppRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/onboarding': {
+      id: '/_authenticated/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/': {
+      id: '/_authenticated/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/collect': {
+      id: '/_authenticated/app/collect'
+      path: '/collect'
+      fullPath: '/app/collect'
+      preLoaderRoute: typeof AuthenticatedAppCollectRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/debtors': {
+      id: '/_authenticated/app/debtors'
+      path: '/debtors'
+      fullPath: '/app/debtors'
+      preLoaderRoute: typeof AuthenticatedAppDebtorsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/receipts': {
+      id: '/_authenticated/app/receipts'
+      path: '/receipts'
+      fullPath: '/app/receipts'
+      preLoaderRoute: typeof AuthenticatedAppReceiptsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/students': {
+      id: '/_authenticated/app/students'
+      path: '/students'
+      fullPath: '/app/students'
+      preLoaderRoute: typeof AuthenticatedAppStudentsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
   }
 }
 
+interface AuthenticatedAppRouteChildren {
+  AuthenticatedAppCollectRoute: typeof AuthenticatedAppCollectRoute
+  AuthenticatedAppDebtorsRoute: typeof AuthenticatedAppDebtorsRoute
+  AuthenticatedAppReceiptsRoute: typeof AuthenticatedAppReceiptsRoute
+  AuthenticatedAppStudentsRoute: typeof AuthenticatedAppStudentsRoute
+  AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
+}
+
+const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
+  AuthenticatedAppCollectRoute: AuthenticatedAppCollectRoute,
+  AuthenticatedAppDebtorsRoute: AuthenticatedAppDebtorsRoute,
+  AuthenticatedAppReceiptsRoute: AuthenticatedAppReceiptsRoute,
+  AuthenticatedAppStudentsRoute: AuthenticatedAppStudentsRoute,
+  AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
+}
+
+const AuthenticatedAppRouteWithChildren =
+  AuthenticatedAppRoute._addFileChildren(AuthenticatedAppRouteChildren)
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAppRoute: typeof AuthenticatedAppRouteWithChildren
+  AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAppRoute: AuthenticatedAppRouteWithChildren,
+  AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
