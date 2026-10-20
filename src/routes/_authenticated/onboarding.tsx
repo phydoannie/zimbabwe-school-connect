@@ -32,7 +32,7 @@ function Onboarding() {
       _term: Number(f.get("term")), _full_name: String(f.get("full_name")),
     });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     await qc.invalidateQueries({ queryKey: ["memberships", userId] });
     switchSchool(data as string);
     toast.success("School created");
@@ -47,7 +47,7 @@ function Onboarding() {
       _code: String(f.get("code")), _role: f.get("role") as "bursar", _full_name: String(f.get("full_name")),
     });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     await qc.invalidateQueries({ queryKey: ["memberships", userId] });
     toast.success("Request sent. The School Head must approve it.");
   }

@@ -24,7 +24,7 @@ function Collect() {
   const [q, setQ] = useState("");
   const [stu, setStu] = useState<Stu | null>(null);
   const [amounts, setAmounts] = useState<Record<string, string>>({});
-  const [method, setMethod] = useState(PAYMENT_METHODS[0]);
+  const [method, setMethod] = useState<string>(PAYMENT_METHODS[0] ?? "Cash");
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
@@ -52,14 +52,14 @@ function Collect() {
   const total = sumAllocations(items);
 
   async function submit() {
-    if (!stu || items.length === 0) return toast.error("Enter at least one amount");
+    if (!stu || items.length === 0) { toast.error("Enter at least one amount"); return; }
     setBusy(true);
     const { data: rid, error } = await supabase.rpc("collect_payment", {
       _student: stu.id, _method: method, _reference: reference || "", _notes: notes || "",
       _paid_on: new Date().toISOString().slice(0, 10), _items: items,
     });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     const { data: r } = await supabase.from("payment_receipts").select("*").eq("id", rid as string).single();
     const newBal = (await supabase.rpc("student_balances", { _student: stu.id })).data ?? [];
     if (r) {
@@ -67,7 +67,7 @@ function Collect() {
         ...r, total: Number(r.total), student: stu,
         items: items.map((i) => {
           const b = newBal.find((x) => x.fee_type_id === i.fee_type_id);
-          return { name: b?.name ?? "Fee", amount: i.amount, balance: b ? Number(b.balance) : undefined };
+          return { name: b?.name ?? "Fee", amount: i.amount, ...(b ? { balance: Number(b.balance) } : {}) };
         }),
       }).save(`${r.receipt_number}.pdf`);
     }
