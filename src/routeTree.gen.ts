@@ -16,9 +16,14 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
+import { Route as AuthenticatedAppAttendanceRouteImport } from './routes/_authenticated/app.attendance'
 import { Route as AuthenticatedAppCollectRouteImport } from './routes/_authenticated/app.collect'
 import { Route as AuthenticatedAppDebtorsRouteImport } from './routes/_authenticated/app.debtors'
+import { Route as AuthenticatedAppExpensesRouteImport } from './routes/_authenticated/app.expenses'
+import { Route as AuthenticatedAppFeesRouteImport } from './routes/_authenticated/app.fees'
 import { Route as AuthenticatedAppReceiptsRouteImport } from './routes/_authenticated/app.receipts'
+import { Route as AuthenticatedAppReportsRouteImport } from './routes/_authenticated/app.reports'
+import { Route as AuthenticatedAppSettingsRouteImport } from './routes/_authenticated/app.settings'
 import { Route as AuthenticatedAppStudentsRouteImport } from './routes/_authenticated/app.students'
 
 const IndexRoute = IndexRouteImport.update({
@@ -55,6 +60,12 @@ const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppAttendanceRoute =
+  AuthenticatedAppAttendanceRouteImport.update({
+    id: '/attendance',
+    path: '/attendance',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppCollectRoute = AuthenticatedAppCollectRouteImport.update({
   id: '/collect',
   path: '/collect',
@@ -65,10 +76,32 @@ const AuthenticatedAppDebtorsRoute = AuthenticatedAppDebtorsRouteImport.update({
   path: '/debtors',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppExpensesRoute =
+  AuthenticatedAppExpensesRouteImport.update({
+    id: '/expenses',
+    path: '/expenses',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppFeesRoute = AuthenticatedAppFeesRouteImport.update({
+  id: '/fees',
+  path: '/fees',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
 const AuthenticatedAppReceiptsRoute =
   AuthenticatedAppReceiptsRouteImport.update({
     id: '/receipts',
     path: '/receipts',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppReportsRoute = AuthenticatedAppReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppSettingsRoute =
+  AuthenticatedAppSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
 const AuthenticatedAppStudentsRoute =
@@ -84,9 +117,14 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/app/attendance': typeof AuthenticatedAppAttendanceRoute
   '/app/collect': typeof AuthenticatedAppCollectRoute
   '/app/debtors': typeof AuthenticatedAppDebtorsRoute
+  '/app/expenses': typeof AuthenticatedAppExpensesRoute
+  '/app/fees': typeof AuthenticatedAppFeesRoute
   '/app/receipts': typeof AuthenticatedAppReceiptsRoute
+  '/app/reports': typeof AuthenticatedAppReportsRoute
+  '/app/settings': typeof AuthenticatedAppSettingsRoute
   '/app/students': typeof AuthenticatedAppStudentsRoute
   '/app/': typeof AuthenticatedAppIndexRoute
 }
@@ -95,9 +133,14 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/app/attendance': typeof AuthenticatedAppAttendanceRoute
   '/app/collect': typeof AuthenticatedAppCollectRoute
   '/app/debtors': typeof AuthenticatedAppDebtorsRoute
+  '/app/expenses': typeof AuthenticatedAppExpensesRoute
+  '/app/fees': typeof AuthenticatedAppFeesRoute
   '/app/receipts': typeof AuthenticatedAppReceiptsRoute
+  '/app/reports': typeof AuthenticatedAppReportsRoute
+  '/app/settings': typeof AuthenticatedAppSettingsRoute
   '/app/students': typeof AuthenticatedAppStudentsRoute
   '/app': typeof AuthenticatedAppIndexRoute
 }
@@ -109,9 +152,14 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
+  '/_authenticated/app/attendance': typeof AuthenticatedAppAttendanceRoute
   '/_authenticated/app/collect': typeof AuthenticatedAppCollectRoute
   '/_authenticated/app/debtors': typeof AuthenticatedAppDebtorsRoute
+  '/_authenticated/app/expenses': typeof AuthenticatedAppExpensesRoute
+  '/_authenticated/app/fees': typeof AuthenticatedAppFeesRoute
   '/_authenticated/app/receipts': typeof AuthenticatedAppReceiptsRoute
+  '/_authenticated/app/reports': typeof AuthenticatedAppReportsRoute
+  '/_authenticated/app/settings': typeof AuthenticatedAppSettingsRoute
   '/_authenticated/app/students': typeof AuthenticatedAppStudentsRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
 }
@@ -123,9 +171,14 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/app'
     | '/onboarding'
+    | '/app/attendance'
     | '/app/collect'
     | '/app/debtors'
+    | '/app/expenses'
+    | '/app/fees'
     | '/app/receipts'
+    | '/app/reports'
+    | '/app/settings'
     | '/app/students'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
@@ -134,9 +187,14 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/onboarding'
+    | '/app/attendance'
     | '/app/collect'
     | '/app/debtors'
+    | '/app/expenses'
+    | '/app/fees'
     | '/app/receipts'
+    | '/app/reports'
+    | '/app/settings'
     | '/app/students'
     | '/app'
   id:
@@ -147,9 +205,14 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_authenticated/app'
     | '/_authenticated/onboarding'
+    | '/_authenticated/app/attendance'
     | '/_authenticated/app/collect'
     | '/_authenticated/app/debtors'
+    | '/_authenticated/app/expenses'
+    | '/_authenticated/app/fees'
     | '/_authenticated/app/receipts'
+    | '/_authenticated/app/reports'
+    | '/_authenticated/app/settings'
     | '/_authenticated/app/students'
     | '/_authenticated/app/'
   fileRoutesById: FileRoutesById
@@ -212,6 +275,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/attendance': {
+      id: '/_authenticated/app/attendance'
+      path: '/attendance'
+      fullPath: '/app/attendance'
+      preLoaderRoute: typeof AuthenticatedAppAttendanceRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/collect': {
       id: '/_authenticated/app/collect'
       path: '/collect'
@@ -226,11 +296,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppDebtorsRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/expenses': {
+      id: '/_authenticated/app/expenses'
+      path: '/expenses'
+      fullPath: '/app/expenses'
+      preLoaderRoute: typeof AuthenticatedAppExpensesRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/fees': {
+      id: '/_authenticated/app/fees'
+      path: '/fees'
+      fullPath: '/app/fees'
+      preLoaderRoute: typeof AuthenticatedAppFeesRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/receipts': {
       id: '/_authenticated/app/receipts'
       path: '/receipts'
       fullPath: '/app/receipts'
       preLoaderRoute: typeof AuthenticatedAppReceiptsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/reports': {
+      id: '/_authenticated/app/reports'
+      path: '/reports'
+      fullPath: '/app/reports'
+      preLoaderRoute: typeof AuthenticatedAppReportsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/settings': {
+      id: '/_authenticated/app/settings'
+      path: '/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof AuthenticatedAppSettingsRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/students': {
@@ -244,17 +342,27 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedAppRouteChildren {
+  AuthenticatedAppAttendanceRoute: typeof AuthenticatedAppAttendanceRoute
   AuthenticatedAppCollectRoute: typeof AuthenticatedAppCollectRoute
   AuthenticatedAppDebtorsRoute: typeof AuthenticatedAppDebtorsRoute
+  AuthenticatedAppExpensesRoute: typeof AuthenticatedAppExpensesRoute
+  AuthenticatedAppFeesRoute: typeof AuthenticatedAppFeesRoute
   AuthenticatedAppReceiptsRoute: typeof AuthenticatedAppReceiptsRoute
+  AuthenticatedAppReportsRoute: typeof AuthenticatedAppReportsRoute
+  AuthenticatedAppSettingsRoute: typeof AuthenticatedAppSettingsRoute
   AuthenticatedAppStudentsRoute: typeof AuthenticatedAppStudentsRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
 }
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
+  AuthenticatedAppAttendanceRoute: AuthenticatedAppAttendanceRoute,
   AuthenticatedAppCollectRoute: AuthenticatedAppCollectRoute,
   AuthenticatedAppDebtorsRoute: AuthenticatedAppDebtorsRoute,
+  AuthenticatedAppExpensesRoute: AuthenticatedAppExpensesRoute,
+  AuthenticatedAppFeesRoute: AuthenticatedAppFeesRoute,
   AuthenticatedAppReceiptsRoute: AuthenticatedAppReceiptsRoute,
+  AuthenticatedAppReportsRoute: AuthenticatedAppReportsRoute,
+  AuthenticatedAppSettingsRoute: AuthenticatedAppSettingsRoute,
   AuthenticatedAppStudentsRoute: AuthenticatedAppStudentsRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
 }
