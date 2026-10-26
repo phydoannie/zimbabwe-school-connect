@@ -598,6 +598,22 @@ export type Database = {
           student_id: string
         }[]
       }
+      debtors_by_fee: {
+        Args: { _school: string }
+        Returns: {
+          account: string
+          balance: number
+          due: number
+          fee_name: string
+          fee_type_id: string
+          full_name: string
+          grade: string
+          guardian_phone: string
+          paid: number
+          reg_number: string
+          student_id: string
+        }[]
+      }
       has_perm: { Args: { _perm: string; _school: string }; Returns: boolean }
       member_role: {
         Args: { _school: string }
