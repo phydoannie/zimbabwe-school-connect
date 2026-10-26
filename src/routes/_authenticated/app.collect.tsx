@@ -104,15 +104,26 @@ function Collect() {
             </div>
             <div className="mt-4 space-y-2">
               {(bal.data ?? []).length === 0 && <p className="text-sm text-muted-foreground">No fees set for this class this term. Add them under Fee structure.</p>}
-              {(bal.data ?? []).map((b) => (
-                <div key={b.fee_type_id} className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-lg border p-3 sm:grid-cols-[1fr_auto_auto_8rem]">
-                  <div><div className="font-medium">{b.name}</div><div className="text-xs text-muted-foreground">{b.account}</div></div>
+              {(bal.data ?? []).length > 0 && <p className="text-xs text-muted-foreground">Tick the fees the parent is paying — you can pay several on one receipt.</p>}
+              {(bal.data ?? []).map((b) => {
+                const on = b.fee_type_id in amounts;
+                return (
+                <div key={b.fee_type_id} className={`grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-lg border p-3 sm:grid-cols-[auto_1fr_auto_auto_8rem] ${on ? "border-primary bg-primary/5" : ""}`}>
+                  <input type="checkbox" className="h-5 w-5" checked={on} aria-label={`Pay ${b.name}`}
+                    onChange={(e) => {
+                      const n = { ...amounts };
+                      if (e.target.checked) n[b.fee_type_id] = Number(b.balance) > 0 ? String(Number(b.balance)) : "";
+                      else delete n[b.fee_type_id];
+                      setAmounts(n);
+                    }} />
+                  <div><div className="font-medium">{b.name}</div><div className="text-xs text-muted-foreground">{b.account} · bal {money(b.balance, school.currency)}</div></div>
                   <div className="hidden text-right text-xs sm:block">Due<br /><span className="font-semibold">{money(b.due, school.currency)}</span></div>
                   <div className="hidden text-right text-xs sm:block">Balance<br /><span className={`font-semibold ${Number(b.balance) > 0 ? "text-destructive" : "text-success"}`}>{money(b.balance, school.currency)}</span></div>
-                  <Input type="number" min="0" step="0.01" inputMode="decimal" placeholder="0.00" className="h-11 text-right"
-                    value={amounts[b.fee_type_id] ?? ""} onChange={(e) => setAmounts({ ...amounts, [b.fee_type_id]: e.target.value })} />
+                  <Input type="number" min="0" step="0.01" inputMode="decimal" placeholder="0.00" className="col-span-3 h-11 text-right sm:col-span-1"
+                    disabled={!on} value={amounts[b.fee_type_id] ?? ""} onChange={(e) => setAmounts({ ...amounts, [b.fee_type_id]: e.target.value })} />
                 </div>
-              ))}
+                );
+              })}
             </div>
           </Card>
           <Card className="h-fit space-y-3 lg:sticky lg:top-6">
