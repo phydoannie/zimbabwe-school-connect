@@ -23,6 +23,7 @@ export const EXPENSE_CATEGORIES = [
 
 export const ROLE_LABELS: Record<string, string> = {
   head: "School Head",
+  headmaster: "HEADMASTER (read only)",
   bursar: "Bursar",
   deputy_head: "Deputy Head",
   admin: "Administrator",
@@ -34,7 +35,8 @@ export type Perm = "view" | "students" | "finance" | "reports" | "fees_setup" | 
 // Mirrors public.has_perm in the database (database is authoritative).
 export const ROLE_PERMS: Record<string, Perm[]> = {
   head: ["view", "students", "finance", "reports", "fees_setup", "attendance", "settings", "users"],
-  admin: ["view", "students", "attendance", "settings", "users", "reports", "fees_setup"],
+  admin: ["view", "students", "finance", "attendance", "settings", "users", "reports", "fees_setup"],
+  headmaster: ["view", "reports"],
   bursar: ["view", "students", "finance", "reports", "fees_setup"],
   deputy_head: ["view", "students", "attendance"],
   teacher: ["view", "attendance"],
