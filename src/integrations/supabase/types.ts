@@ -59,6 +59,7 @@ export type Database = {
           recorded_by: string
           school_id: string
           spent_on: string
+          voucher_reference: string | null
         }
         Insert: {
           account?: string
@@ -71,6 +72,7 @@ export type Database = {
           recorded_by: string
           school_id: string
           spent_on?: string
+          voucher_reference?: string | null
         }
         Update: {
           account?: string
@@ -83,6 +85,7 @@ export type Database = {
           recorded_by?: string
           school_id?: string
           spent_on?: string
+          voucher_reference?: string | null
         }
         Relationships: [
           {
@@ -266,6 +269,21 @@ export type Database = {
             referencedColumns: ["school_id", "id"]
           },
         ]
+      }
+      profiles: {
+        Row: {
+          id: string
+          username: string
+        }
+        Insert: {
+          id: string
+          username: string
+        }
+        Update: {
+          id?: string
+          username?: string
+        }
+        Relationships: []
       }
       school_members: {
         Row: {
@@ -648,7 +666,13 @@ export type Database = {
       }
     }
     Enums: {
-      school_role: "head" | "bursar" | "deputy_head" | "admin" | "teacher"
+      school_role:
+        | "head"
+        | "bursar"
+        | "deputy_head"
+        | "admin"
+        | "teacher"
+        | "headmaster"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -776,7 +800,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      school_role: ["head", "bursar", "deputy_head", "admin", "teacher"],
+      school_role: [
+        "head",
+        "bursar",
+        "deputy_head",
+        "admin",
+        "teacher",
+        "headmaster",
+      ],
     },
   },
 } as const
