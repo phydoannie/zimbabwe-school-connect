@@ -2,27 +2,20 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
+import { usernameEmail } from '@/lib/accounts';
+import { pageHead } from '@/lib/metadata';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/auth")({
-  head: () => ({
-    meta: [
-      { title: "Sign in — SchoolSys Pro" },
-      { name: "description", content: "Sign in or create your SchoolSys Pro account." },
-      { property: "og:title", content: "Sign in — SchoolSys Pro" },
-      { property: "og:description", content: "Access your school's fees, receipts and records." },
-    ],
-  }),
+  head: () => pageHead('Staff sign in', 'Sign in to SchoolSys Pro with your assigned staff username.'),
   component: AuthPage,
 });
 
 function AuthPage() {
   const nav = useNavigate();
-  const [mode, setMode] = useState<"in" | "up" | "forgot">("in");
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -30,33 +23,14 @@ function AuthPage() {
     e.preventDefault();
     setBusy(true);
     try {
-      if (mode === "in") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({ email: usernameEmail(username), password });
         if (error) throw error;
         nav({ to: "/app" });
-      } else if (mode === "up") {
-        const { error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin + "/app" } });
-        if (error) throw error;
-        toast.success("Check your email to confirm your account.");
-        setMode("in");
-      } else {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + "/reset-password" });
-        if (error) throw error;
-        toast.success("Password reset link sent.");
-        setMode("in");
-      }
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
       setBusy(false);
     }
-  }
-
-  async function google() {
-    const r = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/auth" });
-    if (r.error) { toast.error(r.error.message); return; }
-    if (r.redirected) return;
-    nav({ to: "/app" });
   }
 
   return (
@@ -66,26 +40,15 @@ function AuthPage() {
         <div className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-card">
           <Link to="/" className="font-display text-lg font-bold">SchoolSys<span className="text-primary"> Pro</span></Link>
           <h1 className="mt-4 text-2xl font-bold">
-            {mode === "in" ? "Welcome back" : mode === "up" ? "Create account" : "Reset password"}
+            Staff sign in
           </h1>
           <form onSubmit={submit} className="mt-5 space-y-3">
-            <div><Label>Email</Label><Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="h-11" /></div>
-            {mode !== "forgot" && (
-              <div><Label>Password</Label><Input type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} className="h-11" /></div>
-            )}
+            <div><Label htmlFor="username">Username</Label><Input id="username" autoComplete="username" required value={username} onChange={(e) => setUsername(e.target.value)} className="h-11" /></div>
+            <div><Label htmlFor="password">Password</Label><Input id="password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} className="h-11" /></div>
             <Button type="submit" disabled={busy} className="h-11 w-full">
-              {mode === "in" ? "Sign in" : mode === "up" ? "Sign up" : "Send reset link"}
+              {busy ? 'Signing in…' : 'Sign in'}
             </Button>
           </form>
-          {mode !== "forgot" && (
-            <Button variant="outline" className="mt-3 h-11 w-full" onClick={google}>Continue with Google</Button>
-          )}
-          <div className="mt-4 flex justify-between text-sm">
-            <button className="text-primary" onClick={() => setMode(mode === "in" ? "up" : "in")}>
-              {mode === "in" ? "Create an account" : "Have an account? Sign in"}
-            </button>
-            {mode === "in" && <button className="text-muted-foreground" onClick={() => setMode("forgot")}>Forgot?</button>}
-          </div>
         </div>
       </div>
     </div>
