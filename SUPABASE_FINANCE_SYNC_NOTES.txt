@@ -1,0 +1,7 @@
+SchoolSys web app finance sync
+==============================
+The React web app is connected to the SchoolSys Supabase project rnyamtcivypavqdxkubp. Its Collect Fees route writes payment_receipts and payment_allocations through the collect_payment RPC; its Expenses route writes expenses. Android Cloud Sync Stage 2 uploads offline records into these same tables and downloads web records into the local Android database on the next sync.
+
+For hosting, deploy this project through your chosen web host and configure the existing VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY environment variables. Do not put a service-role/secret key in browser environment variables.
+
+Cloud finance sync RPCs were added to the connected Supabase project. An active school membership with finance permission is required for writing financial records.
