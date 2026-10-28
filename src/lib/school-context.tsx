@@ -48,7 +48,7 @@ export function SchoolProvider({ userId, email, children }: { userId: string; em
   const value = useMemo<Ctx>(
     () => ({
       userId,
-      email,
+      email: email.endsWith('@accounts.schoolsys.local') ? email.split('@')[0] ?? '' : email,
       memberships,
       school: current?.schools ?? null,
       role: current?.role ?? null,

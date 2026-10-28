@@ -33,7 +33,7 @@ function Receipts() {
 
   function pdf(r: NonNullable<typeof data>[number]) {
     receiptPdf(school, {
-      ...r, total: Number(r.total), student: r.students!,
+      ...r, total: Number(r.total), student: r.students ?? { first_name: '', last_name: '', reg_number: '', grade: '' },
       items: r.payment_allocations.map((a) => ({ name: a.fee_types?.name ?? "Fee", amount: Number(a.amount) })),
     }).save(`${r.receipt_number}.pdf`);
   }
@@ -53,7 +53,7 @@ function Receipts() {
       <Input placeholder="Search receipt number" value={q} onChange={(e) => setQ(e.target.value)} className="mb-4 h-10" />
       {(data ?? []).length === 0 ? <Empty>No receipts yet.</Empty> : (
         <div className="space-y-2">
-          {data!.map((r) => (
+          {(data ?? []).map((r) => (
             <div key={r.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-4">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 font-medium">{r.students?.first_name} {r.students?.last_name}
@@ -64,7 +64,7 @@ function Receipts() {
               <div className="flex items-center gap-2">
                 <span className="font-semibold">{money(r.total, school.currency)}</span>
                 <Button size="sm" variant="outline" onClick={() => pdf(r)}>PDF</Button>
-                {!r.voided && (role === "head" || role === "bursar") && <Button size="sm" variant="ghost" onClick={() => voidIt(r.id)}>Void</Button>}
+                {!r.voided && (role === "head" || role === "bursar" || role === 'admin') && <Button size="sm" variant="ghost" onClick={() => voidIt(r.id)}>Void</Button>}
               </div>
             </div>
           ))}
