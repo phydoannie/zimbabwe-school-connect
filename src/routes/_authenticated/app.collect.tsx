@@ -31,7 +31,7 @@ function Collect() {
 
   const search = useQuery({
     queryKey: ["stu-search", school.id, q],
-    enabled: q.length >= 2 && !stu,
+    enabled: can('finance') && q.length >= 2 && !stu,
     queryFn: async () => {
       const { data } = await supabase.from("students").select("id,first_name,last_name,reg_number,grade")
         .eq("school_id", school.id).eq("status", "active")
@@ -43,7 +43,7 @@ function Collect() {
   const bal = useQuery({
     queryKey: ["balances", stu?.id],
     enabled: !!stu,
-    queryFn: async () => (await supabase.rpc("student_balances", { _student: stu!.id })).data ?? [],
+    queryFn: async () => stu ? (await supabase.rpc("student_balances", { _student: stu.id })).data ?? [] : [],
   });
 
   if (!can("finance")) return <p>You don't have permission to collect fees.</p>;
