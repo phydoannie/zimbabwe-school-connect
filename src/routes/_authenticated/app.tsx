@@ -2,7 +2,7 @@ import { createFileRoute, Link, Navigate, Outlet, useNavigate } from "@tanstack/
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  LayoutDashboard, Users, Wallet, Receipt, AlertTriangle, Tags, TrendingDown, CalendarCheck, BarChart3, Settings, LogOut, Menu,
+  LayoutDashboard, Users, Wallet, Receipt, AlertTriangle, Tags, TrendingDown, CalendarCheck, BarChart3, BookOpen, Settings, LogOut, Menu,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSchool } from "@/lib/school-context";
@@ -23,6 +23,7 @@ const NAV: { to: string; label: string; icon: typeof Users; perm: Perm }[] = [
   { to: "/app/debtors", label: "Debtors", icon: AlertTriangle, perm: "reports" },
   { to: "/app/fees", label: "Fee structure", icon: Tags, perm: "view" },
   { to: "/app/expenses", label: "Expenses", icon: TrendingDown, perm: "reports" },
+  { to: "/app/cashbook", label: "Cash book", icon: BookOpen, perm: "reports" },
   { to: "/app/attendance", label: "Staff attendance", icon: CalendarCheck, perm: "view" },
   { to: "/app/reports", label: "Reports", icon: BarChart3, perm: "reports" },
   { to: "/app/settings", label: "Settings", icon: Settings, perm: "view" },
