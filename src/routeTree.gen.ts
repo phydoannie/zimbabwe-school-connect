@@ -18,6 +18,7 @@ import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/ap
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as AuthenticatedAppAttendanceRouteImport } from './routes/_authenticated/app.attendance'
+import { Route as AuthenticatedAppCashbookRouteImport } from './routes/_authenticated/app.cashbook'
 import { Route as AuthenticatedAppCollectRouteImport } from './routes/_authenticated/app.collect'
 import { Route as AuthenticatedAppDebtorsRouteImport } from './routes/_authenticated/app.debtors'
 import { Route as AuthenticatedAppExpensesRouteImport } from './routes/_authenticated/app.expenses'
@@ -70,6 +71,12 @@ const AuthenticatedAppAttendanceRoute =
   AuthenticatedAppAttendanceRouteImport.update({
     id: '/attendance',
     path: '/attendance',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppCashbookRoute =
+  AuthenticatedAppCashbookRouteImport.update({
+    id: '/cashbook',
+    path: '/cashbook',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
 const AuthenticatedAppCollectRoute = AuthenticatedAppCollectRouteImport.update({
@@ -125,6 +132,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/app/attendance': typeof AuthenticatedAppAttendanceRoute
+  '/app/cashbook': typeof AuthenticatedAppCashbookRoute
   '/app/collect': typeof AuthenticatedAppCollectRoute
   '/app/debtors': typeof AuthenticatedAppDebtorsRoute
   '/app/expenses': typeof AuthenticatedAppExpensesRoute
@@ -142,6 +150,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/app/attendance': typeof AuthenticatedAppAttendanceRoute
+  '/app/cashbook': typeof AuthenticatedAppCashbookRoute
   '/app/collect': typeof AuthenticatedAppCollectRoute
   '/app/debtors': typeof AuthenticatedAppDebtorsRoute
   '/app/expenses': typeof AuthenticatedAppExpensesRoute
@@ -162,6 +171,7 @@ export interface FileRoutesById {
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/app/attendance': typeof AuthenticatedAppAttendanceRoute
+  '/_authenticated/app/cashbook': typeof AuthenticatedAppCashbookRoute
   '/_authenticated/app/collect': typeof AuthenticatedAppCollectRoute
   '/_authenticated/app/debtors': typeof AuthenticatedAppDebtorsRoute
   '/_authenticated/app/expenses': typeof AuthenticatedAppExpensesRoute
@@ -182,6 +192,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/onboarding'
     | '/app/attendance'
+    | '/app/cashbook'
     | '/app/collect'
     | '/app/debtors'
     | '/app/expenses'
@@ -199,6 +210,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/onboarding'
     | '/app/attendance'
+    | '/app/cashbook'
     | '/app/collect'
     | '/app/debtors'
     | '/app/expenses'
@@ -218,6 +230,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app'
     | '/_authenticated/onboarding'
     | '/_authenticated/app/attendance'
+    | '/_authenticated/app/cashbook'
     | '/_authenticated/app/collect'
     | '/_authenticated/app/debtors'
     | '/_authenticated/app/expenses'
@@ -302,6 +315,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppAttendanceRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/cashbook': {
+      id: '/_authenticated/app/cashbook'
+      path: '/cashbook'
+      fullPath: '/app/cashbook'
+      preLoaderRoute: typeof AuthenticatedAppCashbookRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/collect': {
       id: '/_authenticated/app/collect'
       path: '/collect'
@@ -363,6 +383,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAppRouteChildren {
   AuthenticatedAppAttendanceRoute: typeof AuthenticatedAppAttendanceRoute
+  AuthenticatedAppCashbookRoute: typeof AuthenticatedAppCashbookRoute
   AuthenticatedAppCollectRoute: typeof AuthenticatedAppCollectRoute
   AuthenticatedAppDebtorsRoute: typeof AuthenticatedAppDebtorsRoute
   AuthenticatedAppExpensesRoute: typeof AuthenticatedAppExpensesRoute
@@ -376,6 +397,7 @@ interface AuthenticatedAppRouteChildren {
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppAttendanceRoute: AuthenticatedAppAttendanceRoute,
+  AuthenticatedAppCashbookRoute: AuthenticatedAppCashbookRoute,
   AuthenticatedAppCollectRoute: AuthenticatedAppCollectRoute,
   AuthenticatedAppDebtorsRoute: AuthenticatedAppDebtorsRoute,
   AuthenticatedAppExpensesRoute: AuthenticatedAppExpensesRoute,
