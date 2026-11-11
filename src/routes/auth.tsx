@@ -15,6 +15,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const nav = useNavigate();
+  const [code, setCode] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -25,6 +26,10 @@ function AuthPage() {
     try {
         const { error } = await supabase.auth.signInWithPassword({ email: usernameEmail(username), password });
         if (error) throw error;
+        const { data: rows } = await supabase.from("school_members").select("school_id, status, schools!inner(code)").eq("schools.code", code.trim().toUpperCase());
+        const m = (rows ?? []).find((r) => r.status === "active");
+        if (!m) { await supabase.auth.signOut(); throw new Error(rows?.length ? "Your access to this school is awaiting approval." : "Wrong school code, or you are not a member of that school."); }
+        localStorage.setItem("schoolsys.currentSchool", m.school_id);
         nav({ to: "/app" });
     } catch (err) {
       toast.error((err as Error).message);
@@ -43,12 +48,14 @@ function AuthPage() {
             Staff sign in
           </h1>
           <form onSubmit={submit} className="mt-5 space-y-3">
+            <div><Label htmlFor="code">School code</Label><Input id="code" required placeholder="SCH-XXXXXX" value={code} onChange={(e) => setCode(e.target.value)} className="h-11 uppercase" /></div>
             <div><Label htmlFor="username">Username</Label><Input id="username" autoComplete="username" required value={username} onChange={(e) => setUsername(e.target.value)} className="h-11" /></div>
             <div><Label htmlFor="password">Password</Label><Input id="password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} className="h-11" /></div>
             <Button type="submit" disabled={busy} className="h-11 w-full">
               {busy ? 'Signing in…' : 'Sign in'}
             </Button>
           </form>
+          <p className="mt-4 text-center text-sm">New school? <Link to="/register" className="text-primary underline">Register your school</Link></p>
         </div>
       </div>
     </div>

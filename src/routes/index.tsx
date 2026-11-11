@@ -41,7 +41,7 @@ function Index() {
             From ECD to A-Level. Collect in USD or ZiG, issue receipts instantly, and know your debtors before the term ends.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Button asChild variant="gold" size="lg"><Link to="/auth">Register your school</Link></Button>
+            <Button asChild variant="gold" size="lg"><Link to="/register">Register your school</Link></Button>
           </div>
         </section>
       </header>
