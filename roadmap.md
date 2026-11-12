@@ -5,4 +5,4 @@
 - [ ] Expenses entry, filters, and CSV export
 - [ ] Permission tests and signed-in flow verification
 # Android device pairing
-- [ ] Device pairing approval page + edge function list action (deploy function)
+- [x] Device pairing approval page (built in this app's backend; Android must call /api/public/device-pair)

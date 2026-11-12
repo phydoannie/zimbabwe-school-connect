@@ -29,6 +29,13 @@
       "when": 1793176251851,
       "tag": "0003_protect_membership_changes",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794456417638,
+      "tag": "0004_school_sync_devices",
+      "breakpoints": true
     }
   ]
 }

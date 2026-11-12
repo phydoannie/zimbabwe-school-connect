@@ -326,6 +326,53 @@ export type Database = {
           },
         ]
       }
+      school_sync_devices: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          device_id: string
+          device_name: string | null
+          id: string
+          last_seen_at: string | null
+          platform: string
+          requested_at: string
+          school_id: string
+          status: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          device_id: string
+          device_name?: string | null
+          id?: string
+          last_seen_at?: string | null
+          platform?: string
+          requested_at?: string
+          school_id: string
+          status?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          device_id?: string
+          device_name?: string | null
+          id?: string
+          last_seen_at?: string | null
+          platform?: string
+          requested_at?: string
+          school_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_sync_devices_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       schools: {
         Row: {
           address: string | null
@@ -633,6 +680,27 @@ export type Database = {
         }[]
       }
       has_perm: { Args: { _perm: string; _school: string }; Returns: boolean }
+      list_sync_devices: {
+        Args: { _school: string }
+        Returns: {
+          approved_at: string | null
+          approved_by: string | null
+          device_id: string
+          device_name: string | null
+          id: string
+          last_seen_at: string | null
+          platform: string
+          requested_at: string
+          school_id: string
+          status: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "school_sync_devices"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       member_role: {
         Args: { _school: string }
         Returns: Database["public"]["Enums"]["school_role"]
@@ -648,6 +716,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["school_role"]
         }
         Returns: string
+      }
+      set_sync_device_status: {
+        Args: { _device: string; _school: string; _status: string }
+        Returns: undefined
       }
       student_balances: {
         Args: { _student: string }

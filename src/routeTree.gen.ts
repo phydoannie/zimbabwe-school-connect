@@ -21,12 +21,14 @@ import { Route as AuthenticatedAppAttendanceRouteImport } from './routes/_authen
 import { Route as AuthenticatedAppCashbookRouteImport } from './routes/_authenticated/app.cashbook'
 import { Route as AuthenticatedAppCollectRouteImport } from './routes/_authenticated/app.collect'
 import { Route as AuthenticatedAppDebtorsRouteImport } from './routes/_authenticated/app.debtors'
+import { Route as AuthenticatedAppDevicesRouteImport } from './routes/_authenticated/app.devices'
 import { Route as AuthenticatedAppExpensesRouteImport } from './routes/_authenticated/app.expenses'
 import { Route as AuthenticatedAppFeesRouteImport } from './routes/_authenticated/app.fees'
 import { Route as AuthenticatedAppReceiptsRouteImport } from './routes/_authenticated/app.receipts'
 import { Route as AuthenticatedAppReportsRouteImport } from './routes/_authenticated/app.reports'
 import { Route as AuthenticatedAppSettingsRouteImport } from './routes/_authenticated/app.settings'
 import { Route as AuthenticatedAppStudentsRouteImport } from './routes/_authenticated/app.students'
+import { Route as ApiPublicDevicePairRouteImport } from './routes/api/public/device-pair'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -89,6 +91,11 @@ const AuthenticatedAppDebtorsRoute = AuthenticatedAppDebtorsRouteImport.update({
   path: '/debtors',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppDevicesRoute = AuthenticatedAppDevicesRouteImport.update({
+  id: '/devices',
+  path: '/devices',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
 const AuthenticatedAppExpensesRoute =
   AuthenticatedAppExpensesRouteImport.update({
     id: '/expenses',
@@ -123,6 +130,11 @@ const AuthenticatedAppStudentsRoute =
     path: '/students',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const ApiPublicDevicePairRoute = ApiPublicDevicePairRouteImport.update({
+  id: '/api/public/device-pair',
+  path: '/api/public/device-pair',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -135,12 +147,14 @@ export interface FileRoutesByFullPath {
   '/app/cashbook': typeof AuthenticatedAppCashbookRoute
   '/app/collect': typeof AuthenticatedAppCollectRoute
   '/app/debtors': typeof AuthenticatedAppDebtorsRoute
+  '/app/devices': typeof AuthenticatedAppDevicesRoute
   '/app/expenses': typeof AuthenticatedAppExpensesRoute
   '/app/fees': typeof AuthenticatedAppFeesRoute
   '/app/receipts': typeof AuthenticatedAppReceiptsRoute
   '/app/reports': typeof AuthenticatedAppReportsRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
   '/app/students': typeof AuthenticatedAppStudentsRoute
+  '/api/public/device-pair': typeof ApiPublicDevicePairRoute
   '/app/': typeof AuthenticatedAppIndexRoute
 }
 export interface FileRoutesByTo {
@@ -153,12 +167,14 @@ export interface FileRoutesByTo {
   '/app/cashbook': typeof AuthenticatedAppCashbookRoute
   '/app/collect': typeof AuthenticatedAppCollectRoute
   '/app/debtors': typeof AuthenticatedAppDebtorsRoute
+  '/app/devices': typeof AuthenticatedAppDevicesRoute
   '/app/expenses': typeof AuthenticatedAppExpensesRoute
   '/app/fees': typeof AuthenticatedAppFeesRoute
   '/app/receipts': typeof AuthenticatedAppReceiptsRoute
   '/app/reports': typeof AuthenticatedAppReportsRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
   '/app/students': typeof AuthenticatedAppStudentsRoute
+  '/api/public/device-pair': typeof ApiPublicDevicePairRoute
   '/app': typeof AuthenticatedAppIndexRoute
 }
 export interface FileRoutesById {
@@ -174,12 +190,14 @@ export interface FileRoutesById {
   '/_authenticated/app/cashbook': typeof AuthenticatedAppCashbookRoute
   '/_authenticated/app/collect': typeof AuthenticatedAppCollectRoute
   '/_authenticated/app/debtors': typeof AuthenticatedAppDebtorsRoute
+  '/_authenticated/app/devices': typeof AuthenticatedAppDevicesRoute
   '/_authenticated/app/expenses': typeof AuthenticatedAppExpensesRoute
   '/_authenticated/app/fees': typeof AuthenticatedAppFeesRoute
   '/_authenticated/app/receipts': typeof AuthenticatedAppReceiptsRoute
   '/_authenticated/app/reports': typeof AuthenticatedAppReportsRoute
   '/_authenticated/app/settings': typeof AuthenticatedAppSettingsRoute
   '/_authenticated/app/students': typeof AuthenticatedAppStudentsRoute
+  '/api/public/device-pair': typeof ApiPublicDevicePairRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
 }
 export interface FileRouteTypes {
@@ -195,12 +213,14 @@ export interface FileRouteTypes {
     | '/app/cashbook'
     | '/app/collect'
     | '/app/debtors'
+    | '/app/devices'
     | '/app/expenses'
     | '/app/fees'
     | '/app/receipts'
     | '/app/reports'
     | '/app/settings'
     | '/app/students'
+    | '/api/public/device-pair'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -213,12 +233,14 @@ export interface FileRouteTypes {
     | '/app/cashbook'
     | '/app/collect'
     | '/app/debtors'
+    | '/app/devices'
     | '/app/expenses'
     | '/app/fees'
     | '/app/receipts'
     | '/app/reports'
     | '/app/settings'
     | '/app/students'
+    | '/api/public/device-pair'
     | '/app'
   id:
     | '__root__'
@@ -233,12 +255,14 @@ export interface FileRouteTypes {
     | '/_authenticated/app/cashbook'
     | '/_authenticated/app/collect'
     | '/_authenticated/app/debtors'
+    | '/_authenticated/app/devices'
     | '/_authenticated/app/expenses'
     | '/_authenticated/app/fees'
     | '/_authenticated/app/receipts'
     | '/_authenticated/app/reports'
     | '/_authenticated/app/settings'
     | '/_authenticated/app/students'
+    | '/api/public/device-pair'
     | '/_authenticated/app/'
   fileRoutesById: FileRoutesById
 }
@@ -248,6 +272,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiPublicDevicePairRoute: typeof ApiPublicDevicePairRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -336,6 +361,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppDebtorsRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/devices': {
+      id: '/_authenticated/app/devices'
+      path: '/devices'
+      fullPath: '/app/devices'
+      preLoaderRoute: typeof AuthenticatedAppDevicesRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/expenses': {
       id: '/_authenticated/app/expenses'
       path: '/expenses'
@@ -378,6 +410,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppStudentsRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/api/public/device-pair': {
+      id: '/api/public/device-pair'
+      path: '/api/public/device-pair'
+      fullPath: '/api/public/device-pair'
+      preLoaderRoute: typeof ApiPublicDevicePairRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -386,6 +425,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppCashbookRoute: typeof AuthenticatedAppCashbookRoute
   AuthenticatedAppCollectRoute: typeof AuthenticatedAppCollectRoute
   AuthenticatedAppDebtorsRoute: typeof AuthenticatedAppDebtorsRoute
+  AuthenticatedAppDevicesRoute: typeof AuthenticatedAppDevicesRoute
   AuthenticatedAppExpensesRoute: typeof AuthenticatedAppExpensesRoute
   AuthenticatedAppFeesRoute: typeof AuthenticatedAppFeesRoute
   AuthenticatedAppReceiptsRoute: typeof AuthenticatedAppReceiptsRoute
@@ -400,6 +440,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppCashbookRoute: AuthenticatedAppCashbookRoute,
   AuthenticatedAppCollectRoute: AuthenticatedAppCollectRoute,
   AuthenticatedAppDebtorsRoute: AuthenticatedAppDebtorsRoute,
+  AuthenticatedAppDevicesRoute: AuthenticatedAppDevicesRoute,
   AuthenticatedAppExpensesRoute: AuthenticatedAppExpensesRoute,
   AuthenticatedAppFeesRoute: AuthenticatedAppFeesRoute,
   AuthenticatedAppReceiptsRoute: AuthenticatedAppReceiptsRoute,
@@ -431,6 +472,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ApiPublicDevicePairRoute: ApiPublicDevicePairRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
