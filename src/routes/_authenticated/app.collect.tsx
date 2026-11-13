@@ -6,13 +6,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrentSchool } from "@/lib/school-context";
 import { PAYMENT_METHODS, money, sumAllocations } from "@/lib/constants";
 import { receiptPdf } from "@/lib/pdf";
+import { pageHead } from '@/lib/metadata';
 import { PageHeader, Card, selectCls } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/_authenticated/app/collect")({
-  head: () => ({ meta: [{ title: "Collect fees — SchoolSys Pro" }] }),
+  head: () => pageHead('Collect fees', 'Collect multiple school fees and issue an official receipt.'),
   component: Collect,
 });
 

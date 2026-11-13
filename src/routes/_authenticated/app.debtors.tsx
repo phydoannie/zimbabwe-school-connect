@@ -6,9 +6,10 @@ import { useCurrentSchool } from "@/lib/school-context";
 import { GRADES, money } from "@/lib/constants";
 import { PageHeader, Empty, Stat, selectCls } from "@/components/page";
 import { Button } from "@/components/ui/button";
+import { pageHead } from '@/lib/metadata';
 
 export const Route = createFileRoute("/_authenticated/app/debtors")({
-  head: () => ({ meta: [{ title: "Debtors — SchoolSys Pro" }] }),
+  head: () => pageHead('Debtors', 'Outstanding school balances by student, class and fee type.'),
   component: Debtors,
 });
 

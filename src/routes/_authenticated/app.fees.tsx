@@ -9,9 +9,10 @@ import { PageHeader, Card, Empty, selectCls } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { pageHead } from '@/lib/metadata';
 
 export const Route = createFileRoute("/_authenticated/app/fees")({
-  head: () => ({ meta: [{ title: "Fee structure — SchoolSys Pro" }] }),
+  head: () => pageHead('Fee structure', 'School fees, account allocations and class-specific term charges.'),
   component: Fees,
 });
 

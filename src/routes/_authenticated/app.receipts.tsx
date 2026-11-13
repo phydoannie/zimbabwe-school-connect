@@ -10,9 +10,10 @@ import { PageHeader, Empty } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { pageHead } from '@/lib/metadata';
 
 export const Route = createFileRoute("/_authenticated/app/receipts")({
-  head: () => ({ meta: [{ title: "Receipts — SchoolSys Pro" }] }),
+  head: () => pageHead('Receipts', 'School payment receipts and audited void records.'),
   component: Receipts,
 });
 

@@ -10,6 +10,7 @@ import { ROLE_LABELS, type Perm } from "@/lib/constants";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { Button } from '@/components/ui/button';
+import { OfflineStatus } from '@/components/offline-status';
 
 export const Route = createFileRoute("/_authenticated/app")({
   component: AppLayout,
@@ -33,6 +34,7 @@ const NAV: { to: string; label: string; icon: typeof Users; perm: Perm }[] = [
 function AppLayout() {
   const ctx = useSchool();
   const [open, setOpen] = useState(false);
+  const [online, setOnline] = useState(true);
   const qc = useQueryClient();
   const nav = useNavigate();
 
@@ -96,12 +98,15 @@ function AppLayout() {
         <SheetContent side="left" className="w-72 border-0 p-0">{sidebar}</SheetContent>
       </Sheet>
       <div className="min-w-0 flex-1">
+        <OfflineStatus userId={ctx.userId} onConnectionChange={setOnline} />
         <header className="sticky top-0 z-20 flex items-center gap-3 border-b bg-card/90 px-4 py-3 backdrop-blur lg:hidden">
           <Button variant="ghost" size="icon" onClick={() => setOpen(true)} aria-label="Open menu"><Menu className="h-5 w-5" /></Button>
           <div className="truncate font-display font-semibold">{ctx.school.name}</div>
         </header>
         <main className={cn("mx-auto max-w-6xl p-4 md:p-8")}>
-          <Outlet />
+          <fieldset disabled={!online} className="min-w-0 border-0 p-0">
+            <Outlet />
+          </fieldset>
         </main>
       </div>
     </div>

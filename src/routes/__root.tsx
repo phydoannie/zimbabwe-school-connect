@@ -68,6 +68,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: 'theme-color', content: '#243957' },
+      { name: 'apple-mobile-web-app-capable', content: 'yes' },
       { title: "SchoolSys Pro — School management for Zimbabwe" },
       { name: "description", content: "Fees, receipts, debtors, expenses and attendance for Zimbabwean schools." },
       { property: "og:type", content: "website" },
@@ -76,6 +78,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: 'manifest', href: '/manifest.webmanifest' },
+      { rel: 'apple-touch-icon', href: '/icons/schoolsys-192.png' },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {

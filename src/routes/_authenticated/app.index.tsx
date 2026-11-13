@@ -5,9 +5,10 @@ import { useCurrentSchool } from "@/lib/school-context";
 import { money } from "@/lib/constants";
 import { PageHeader, Stat, Card } from "@/components/page";
 import { Button } from "@/components/ui/button";
+import { pageHead } from '@/lib/metadata';
 
 export const Route = createFileRoute("/_authenticated/app/")({
-  head: () => ({ meta: [{ title: "Dashboard — SchoolSys Pro" }] }),
+  head: () => pageHead('Dashboard', 'School fee collection, student totals, expenses and outstanding balances.'),
   component: Dashboard,
 });
 

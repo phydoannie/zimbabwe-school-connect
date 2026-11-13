@@ -9,9 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { pageHead } from '@/lib/metadata';
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
-  head: () => ({ meta: [{ title: "Set up your school — SchoolSys Pro" }] }),
+  head: () => pageHead('Set up your school', 'Create a school workspace or request access with a school code.'),
   component: Onboarding,
 });
 

@@ -13,3 +13,5 @@
 - Staff creation and credential changes run through authenticated server functions that authorize school management before loading the privileged client; passwords are never stored in application tables.
 - Database has_perm is authoritative; client ROLE_PERMS only controls visible actions and must mirror it.
 - Initial administrator provisioning is a one-time administrative operation, never a public bootstrap endpoint or hardcoded login bypass.
+- Offline phase one persists only successful school-scoped query views in IndexedDB per user, bounded by session expiry; offline writes stay disabled until idempotent synchronization is implemented, preserving financial rules.
+- App-shell caching uses vite-plugin-pwa generateSW and a single preview-safe registrar; never cache auth or data API responses in the service worker.

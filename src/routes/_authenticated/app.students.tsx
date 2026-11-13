@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentSchool } from "@/lib/school-context";
 import { GRADES } from "@/lib/constants";
+import { pageHead } from '@/lib/metadata';
 import { PageHeader, Card, Empty, selectCls } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/app/students")({
-  head: () => ({ meta: [{ title: "Students — SchoolSys Pro" }] }),
+  head: () => pageHead('Students', 'School student register, classes and guardian contact records.'),
   component: Students,
 });
 

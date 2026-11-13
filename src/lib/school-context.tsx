@@ -27,6 +27,14 @@ const KEY = "schoolsys.currentSchool";
 export function SchoolProvider({ userId, email, children }: { userId: string; email: string; children: ReactNode }) {
   const qc = useQueryClient();
   const [currentId, setCurrentId] = useState<string | null>(null);
+  const [online, setOnline] = useState(true);
+  useEffect(() => {
+    const update = () => setOnline(navigator.onLine);
+    update();
+    window.addEventListener('online', update);
+    window.addEventListener('offline', update);
+    return () => { window.removeEventListener('online', update); window.removeEventListener('offline', update); };
+  }, []);
   useEffect(() => setCurrentId(localStorage.getItem(KEY)), []);
 
   const { data, isLoading } = useQuery({
@@ -52,7 +60,7 @@ export function SchoolProvider({ userId, email, children }: { userId: string; em
       memberships,
       school: current?.schools ?? null,
       role: current?.role ?? null,
-      can: (p) => !!current && (ROLE_PERMS[current.role] ?? []).includes(p),
+      can: (p) => !!current && (online || p === 'view' || p === 'reports') && (ROLE_PERMS[current.role] ?? []).includes(p),
       switchSchool: (id) => {
         localStorage.setItem(KEY, id);
         setCurrentId(id);
@@ -60,7 +68,7 @@ export function SchoolProvider({ userId, email, children }: { userId: string; em
       },
       loading: isLoading,
     }),
-    [userId, email, memberships, current, isLoading, qc],
+    [userId, email, memberships, current, isLoading, qc, online],
   );
   return <SchoolCtx.Provider value={value}>{children}</SchoolCtx.Provider>;
 }

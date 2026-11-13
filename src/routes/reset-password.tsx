@@ -12,6 +12,8 @@ export const Route = createFileRoute("/reset-password")({
       { name: "description", content: "Choose a new password for SchoolSys Pro." },
       { property: "og:title", content: "Set new password — SchoolSys Pro" },
       { property: "og:description", content: "Choose a new password." },
+      { property: 'og:type', content: 'website' },
+      { name: 'twitter:card', content: 'summary' },
     ],
   }),
   component: Reset,

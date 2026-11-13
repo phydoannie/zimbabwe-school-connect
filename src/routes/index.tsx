@@ -9,6 +9,8 @@ export const Route = createFileRoute("/")({
       { name: "description", content: "Collect fees in USD or ZiG via EcoCash, cash or bank, issue receipts, track debtors and staff attendance." },
       { property: "og:title", content: "SchoolSys Pro — School management for Zimbabwe" },
       { property: "og:description", content: "Multi-school fees, receipts, debtors, expenses and attendance — built for Zimbabwean schools." },
+      { property: 'og:type', content: 'website' },
+      { name: 'twitter:card', content: 'summary' },
     ],
   }),
   component: Index,
