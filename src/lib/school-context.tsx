@@ -6,7 +6,7 @@ import { ROLE_PERMS, type Perm } from "./constants";
 export type School = {
   id: string; code: string; name: string; address: string | null; phone: string | null; email: string | null;
   slogan: string | null; logo_url: string | null; bank_details: string | null; currency: string;
-  current_year: number; current_term: number;
+  billing_cycle: string; current_year: number; current_term: number;
 };
 export type Membership = { school_id: string; role: string; status: string; full_name: string | null; schools: School | null };
 
