@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentSchool } from "@/lib/school-context";
-import { GRADES } from "@/lib/constants";
+import { GRADES, money } from "@/lib/constants";
 import { pageHead } from '@/lib/metadata';
 import { PageHeader, Card, Empty, selectCls } from "@/components/page";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,89 @@ export const Route = createFileRoute("/_authenticated/app/students")({
 
 const PAGE = 50;
 
+type StuRow = { id: string; reg_number: string; first_name: string; last_name: string; grade: string; class_name: string | null; boarding: boolean; guardian_name: string | null; guardian_phone: string | null; status: string };
+
+function StudentProfile({ student, onClose }: { student: StuRow; onClose: () => void }) {
+  const { school, can } = useCurrentSchool();
+  const qc = useQueryClient();
+  const [amounts, setAmounts] = useState<Record<string, string> | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const bal = useQuery({
+    queryKey: ["balances", student.id],
+    queryFn: async () => (await supabase.rpc("student_balances", { _student: student.id })).data ?? [],
+  });
+  const arrears = useQuery({
+    queryKey: ["arrears", student.id],
+    queryFn: async () => (await supabase.from("student_fee_arrears").select("fee_type_id, amount").eq("student_id", student.id)).data ?? [],
+  });
+
+  // Initialize the editor once both queries have loaded.
+  if (amounts === null && bal.data && arrears.data) {
+    const init: Record<string, string> = {};
+    for (const b of bal.data) init[b.fee_type_id] = "";
+    for (const a of arrears.data) init[a.fee_type_id] = String(Number(a.amount));
+    setAmounts(init);
+  }
+
+  async function saveArrears() {
+    if (!amounts) return;
+    setBusy(true);
+    const rows = Object.entries(amounts)
+      .map(([fee_type_id, v]) => ({ school_id: school.id, student_id: student.id, fee_type_id, amount: Number(v) || 0 }))
+      .filter((r) => r.amount > 0);
+    const keepIds = rows.map((r) => r.fee_type_id);
+    const del = await supabase.from("student_fee_arrears").delete().eq("student_id", student.id)
+      .not("fee_type_id", "in", keepIds.length ? `(${keepIds.join(",")})` : "(00000000-0000-0000-0000-000000000000)");
+    const up = rows.length ? await supabase.from("student_fee_arrears").upsert(rows, { onConflict: "student_id,fee_type_id" }) : { error: null };
+    setBusy(false);
+    const error = del.error ?? up.error;
+    if (error) { toast.error(error.message); return; }
+    toast.success("Arrears saved");
+    qc.invalidateQueries({ queryKey: ["arrears", student.id] });
+    qc.invalidateQueries({ queryKey: ["balances", student.id] });
+    qc.invalidateQueries({ queryKey: ["debtors"] });
+    qc.invalidateQueries({ queryKey: ["debtors_by_fee"] });
+  }
+
+  const total = (bal.data ?? []).reduce((s, b) => s + Math.max(0, Number(b.balance)), 0);
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>{student.first_name} {student.last_name}</DialogTitle></DialogHeader>
+        <p className="text-xs text-muted-foreground">{student.reg_number} · {student.grade}{student.class_name ? ` ${student.class_name}` : ""}{student.boarding ? " · Boarder" : ""}</p>
+        <div className="mt-2 flex items-center justify-between rounded-lg border bg-muted/40 p-3">
+          <span className="text-sm text-muted-foreground">Total balance</span>
+          <span className={`font-display text-xl font-bold ${total > 0 ? "text-destructive" : "text-success"}`}>{money(total, school.currency)}</span>
+        </div>
+        <div className="mt-3 space-y-2">
+          {(bal.data ?? []).length === 0 && <p className="text-sm text-muted-foreground">No fee types for this class this term.</p>}
+          {(bal.data ?? []).map((b) => (
+            <div key={b.fee_type_id} className="rounded-lg border p-3">
+              <div className="flex items-center justify-between">
+                <div className="font-medium">{b.name}</div>
+                <div className={`text-sm font-semibold ${Number(b.balance) > 0 ? "text-destructive" : "text-success"}`}>{money(b.balance, school.currency)}</div>
+              </div>
+              <div className="mt-1 text-xs text-muted-foreground">Due {money(b.due, school.currency)} · Paid {money(b.paid, school.currency)}</div>
+              {can("finance") && amounts && (
+                <div className="mt-2 flex items-center gap-2">
+                  <Label className="text-xs">Arrears (older unpaid terms)</Label>
+                  <Input type="number" min="0" step="0.01" inputMode="decimal" className="h-9 w-28 text-right"
+                    value={amounts[b.fee_type_id] ?? ""} placeholder="0.00"
+                    onChange={(e) => setAmounts({ ...amounts, [b.fee_type_id]: e.target.value })} />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        {can("finance") && (bal.data ?? []).length > 0 && (
+          <Button variant="gold" className="mt-3 w-full" disabled={busy || !amounts} onClick={saveArrears}>Save arrears</Button>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function Students() {
   const { school, can } = useCurrentSchool();
   const qc = useQueryClient();
@@ -27,6 +110,7 @@ function Students() {
   const [grade, setGrade] = useState("");
   const [page, setPage] = useState(0);
   const [open, setOpen] = useState(false);
+  const [profile, setProfile] = useState<StuRow | null>(null);
 
   const { data } = useQuery({
     queryKey: ["students", school.id, q, grade, page],
@@ -75,7 +159,7 @@ function Students() {
               </thead>
               <tbody className="divide-y">
                 {rows.map((s) => (
-                  <tr key={s.id}>
+                  <tr key={s.id} onClick={() => setProfile(s)} className="cursor-pointer hover:bg-muted/50">
                     <td className="p-3 font-mono text-xs">{s.reg_number}</td>
                     <td className="font-medium">{s.first_name} {s.last_name} {s.boarding && <Badge variant="secondary" className="ml-1">Boarder</Badge>}</td>
                     <td>{s.grade}{s.class_name ? ` ${s.class_name}` : ""}</td>
@@ -87,8 +171,8 @@ function Students() {
             </table>
           </div>
           <div className="space-y-2 md:hidden">
-            {rows.map((s) => (
-              <Card key={s.id}>
+             {rows.map((s) => (
+              <Card key={s.id} onClick={() => setProfile(s)} className="cursor-pointer">
                 <div className="flex justify-between"><div className="font-medium">{s.first_name} {s.last_name}</div><Badge variant="secondary">{s.grade}</Badge></div>
                 <div className="mt-1 text-xs text-muted-foreground">{s.reg_number} · {s.guardian_phone ?? "no phone"}</div>
               </Card>
@@ -100,6 +184,7 @@ function Students() {
           </div>
         </>
       )}
+      {profile && <StudentProfile student={profile} onClose={() => setProfile(null)} />}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>New student</DialogTitle></DialogHeader>
@@ -113,7 +198,8 @@ function Students() {
             <label className="flex items-end gap-2 pb-2 text-sm"><input type="checkbox" name="boarding" /> Boarder</label>
             <div><Label>Guardian name</Label><Input name="guardian_name" /></div>
             <div><Label>Guardian phone</Label><Input name="guardian_phone" placeholder="07…" /></div>
-            <div className="col-span-2"><Label>Opening balance (arrears)</Label><Input name="opening_balance" type="number" step="0.01" defaultValue="0" /></div>
+            <div className="col-span-2"><Label>Opening balance (general arrears)</Label><Input name="opening_balance" type="number" step="0.01" defaultValue="0" />
+              <p className="mt-1 text-xs text-muted-foreground">After saving, open the student's profile to record arrears per fee type (e.g. Tuition $20, General Levy $75).</p></div>
             <Button className="col-span-2">Save student</Button>
           </form>
         </DialogContent>

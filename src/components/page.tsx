@@ -12,8 +12,8 @@ export function PageHeader({ title, sub, action }: { title: string; sub?: string
   );
 }
 
-export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`rounded-xl border bg-card p-4 shadow-card md:p-5 ${className}`}>{children}</div>;
+export function Card({ children, className = "", onClick }: { children: ReactNode; className?: string; onClick?: () => void }) {
+  return <div onClick={onClick} className={`rounded-xl border bg-card p-4 shadow-card md:p-5 ${className}`}>{children}</div>;
 }
 
 export function Stat({ label, value, tone = "default" }: { label: string; value: string; tone?: "default" | "good" | "bad" | "gold" }) {

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -47,6 +47,13 @@ function Collect() {
     queryFn: async () => stu ? (await supabase.rpc("student_balances", { _student: stu.id })).data ?? [] : [],
   });
 
+  const feeCount = useQuery({
+    queryKey: ["fee_types_count", school.id, school.current_year, school.current_term],
+    enabled: can("finance"),
+    queryFn: async () => (await supabase.from("fee_types").select("id", { count: "exact", head: true })
+      .eq("school_id", school.id).eq("year", school.current_year).eq("term", school.current_term).eq("active", true)).count ?? 0,
+  });
+
   if (!can("finance")) return <p>You don't have permission to collect fees.</p>;
 
   const items = Object.entries(amounts).map(([fee_type_id, a]) => ({ fee_type_id, amount: Number(a) })).filter((i) => i.amount > 0);
@@ -80,6 +87,12 @@ function Collect() {
   return (
     <>
       <PageHeader title="Collect fees" sub={`Term ${school.current_term}, ${school.current_year}`} />
+      {feeCount.data === 0 && (
+        <div className="mb-4 rounded-xl border border-warning/40 bg-warning/10 p-4 text-sm">
+          <span className="font-semibold">Add fee types first.</span> Before collecting, set up this term's fees (Tuition, General Levy, etc.) so parents can pay against them.{" "}
+          <Link to="/app/fees" className="font-semibold text-primary underline">Open fee structure</Link>
+        </div>
+      )}
       {!stu ? (
         <Card>
           <Label>Find student</Label>
@@ -105,7 +118,7 @@ function Collect() {
             </div>
             <div className="mt-4 space-y-2">
               {(bal.data ?? []).length === 0 && <p className="text-sm text-muted-foreground">No fees set for this class this term. Add them under Fee structure.</p>}
-              {(bal.data ?? []).length > 0 && <p className="text-xs text-muted-foreground">Tick the fees the parent is paying — you can pay several on one receipt.</p>}
+              {(bal.data ?? []).length > 0 && <p className="text-xs text-muted-foreground">Tick the fees the parent is paying and type the exact amount handed over — partial payments are fine, the balance carries forward.</p>}
               {(bal.data ?? []).map((b) => {
                 const on = b.fee_type_id in amounts;
                 return (
@@ -113,7 +126,7 @@ function Collect() {
                   <input type="checkbox" className="h-5 w-5" checked={on} aria-label={`Pay ${b.name}`}
                     onChange={(e) => {
                       const n = { ...amounts };
-                      if (e.target.checked) n[b.fee_type_id] = Number(b.balance) > 0 ? String(Number(b.balance)) : "";
+                      if (e.target.checked) n[b.fee_type_id] = "";
                       else delete n[b.fee_type_id];
                       setAmounts(n);
                     }} />

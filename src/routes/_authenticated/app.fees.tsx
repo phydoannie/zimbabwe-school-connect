@@ -9,6 +9,7 @@ import { PageHeader, Card, Empty, selectCls } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { pageHead } from '@/lib/metadata';
 
 export const Route = createFileRoute("/_authenticated/app/fees")({
@@ -25,6 +26,9 @@ function Fees() {
   const [grades, setGrades] = useState<string[]>([]);
   const [boarding, setBoarding] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [invFee, setInvFee] = useState<{ id: string; name: string; amount: number; applies_to: string[] } | null>(null);
+  const [invGrades, setInvGrades] = useState<string[]>([]);
+  const [invBusy, setInvBusy] = useState(false);
 
   const { data } = useQuery({
     queryKey: ["fee_types", school.id, school.current_year, school.current_term],
@@ -49,6 +53,26 @@ function Fees() {
   async function toggle(id: string, active: boolean) {
     const { error } = await supabase.from("fee_types").update({ active }).eq("id", id);
     if (error) toast.error(error.message); else qc.invalidateQueries({ queryKey: ["fee_types"] });
+  }
+
+  function openInvoice(f: { id: string; name: string; amount: number; applies_to: string[] }) {
+    setInvFee(f);
+    setInvGrades(f.applies_to.length ? [...f.applies_to] : []);
+  }
+
+  async function runInvoice() {
+    if (!invFee) return;
+    setInvBusy(true);
+    const { data: n, error } = await supabase.rpc("invoice_fee", {
+      _fee_type: invFee.id, _grades: invGrades, _year: school.current_year, _term: school.current_term,
+    });
+    setInvBusy(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(n === 0 ? "Already invoiced for this period — balances unchanged" : `Invoiced ${n} student${n === 1 ? "" : "s"}: ${invFee.name} ${money(invFee.amount, school.currency)} each`);
+    setInvFee(null);
+    qc.invalidateQueries({ queryKey: ["debtors"] });
+    qc.invalidateQueries({ queryKey: ["debtors_by_fee"] });
+    qc.invalidateQueries({ queryKey: ["balances"] });
   }
 
   return (
@@ -92,12 +116,35 @@ function Fees() {
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-semibold">{money(f.amount, school.currency)}</span>
+                {can("finance") && f.active && <Button size="sm" variant="gold" onClick={() => openInvoice(f)}>Invoice</Button>}
                 {can("fees_setup") && <Button size="sm" variant="outline" onClick={() => toggle(f.id, !f.active)}>{f.active ? "Disable" : "Enable"}</Button>}
               </div>
             </div>
           ))}
         </div>
       </div>
+      <Dialog open={!!invFee} onOpenChange={(o) => !o && setInvFee(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Invoice {invFee?.name}</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Adds {invFee ? money(invFee.amount, school.currency) : ""} to each selected student's balance for Term {school.current_term}, {school.current_year}.
+            Running it again for the same period will not double-charge.
+          </p>
+          <div>
+            <Label>Classes to invoice (none selected = all classes this fee applies to)</Label>
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              {GRADES.map((g) => {
+                const on = invGrades.includes(g);
+                return (
+                  <button key={g} type="button" onClick={() => setInvGrades(on ? invGrades.filter((x) => x !== g) : [...invGrades, g])}
+                    className={`rounded-full border px-2.5 py-1 text-xs ${on ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{g}</button>
+                );
+              })}
+            </div>
+          </div>
+          <Button variant="gold" className="w-full" disabled={invBusy} onClick={runInvoice}>Run invoicing</Button>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
