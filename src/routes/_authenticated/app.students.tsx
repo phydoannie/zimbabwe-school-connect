@@ -29,11 +29,11 @@ function StudentProfile({ student, onClose }: { student: StuRow; onClose: () => 
   const [busy, setBusy] = useState(false);
 
   const bal = useQuery({
-    queryKey: ["balances", student.id],
+    queryKey: ["balances", school.id, student.id],
     queryFn: async () => (await supabase.rpc("student_balances", { _student: student.id })).data ?? [],
   });
   const arrears = useQuery({
-    queryKey: ["arrears", student.id],
+    queryKey: ["arrears", school.id, student.id],
     queryFn: async () => (await supabase.from("student_fee_arrears").select("fee_type_id, amount").eq("student_id", student.id)).data ?? [],
   });
 
@@ -48,24 +48,19 @@ function StudentProfile({ student, onClose }: { student: StuRow; onClose: () => 
   async function saveArrears() {
     if (!amounts) return;
     setBusy(true);
-    const rows = Object.entries(amounts)
-      .map(([fee_type_id, v]) => ({ school_id: school.id, student_id: student.id, fee_type_id, amount: Number(v) || 0 }))
-      .filter((r) => r.amount > 0);
-    const keepIds = rows.map((r) => r.fee_type_id);
-    const del = await supabase.from("student_fee_arrears").delete().eq("student_id", student.id)
-      .not("fee_type_id", "in", keepIds.length ? `(${keepIds.join(",")})` : "(00000000-0000-0000-0000-000000000000)");
-    const up = rows.length ? await supabase.from("student_fee_arrears").upsert(rows, { onConflict: "student_id,fee_type_id" }) : { error: null };
+    const items = Object.entries(amounts).map(([fee_type_id, v]) => ({ fee_type_id, amount: Number(v || 0) }));
+    if (items.some((i) => !Number.isFinite(i.amount) || i.amount < 0)) { setBusy(false); toast.error("Enter valid arrears amounts"); return; }
+    const { error } = await supabase.rpc("save_student_arrears", { _student: student.id, _items: items });
     setBusy(false);
-    const error = del.error ?? up.error;
     if (error) { toast.error(error.message); return; }
     toast.success("Arrears saved");
-    qc.invalidateQueries({ queryKey: ["arrears", student.id] });
-    qc.invalidateQueries({ queryKey: ["balances", student.id] });
+    qc.invalidateQueries({ queryKey: ["arrears", school.id, student.id] });
+    qc.invalidateQueries({ queryKey: ["balances", school.id, student.id] });
     qc.invalidateQueries({ queryKey: ["debtors"] });
     qc.invalidateQueries({ queryKey: ["debtors_by_fee"] });
   }
 
-  const total = (bal.data ?? []).reduce((s, b) => s + Math.max(0, Number(b.balance)), 0);
+  const total = (bal.data ?? []).reduce((s, b) => s + Number(b.balance), 0);
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
@@ -110,6 +105,9 @@ function Students() {
   const [grade, setGrade] = useState("");
   const [page, setPage] = useState(0);
   const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [opening, setOpening] = useState<Record<string, string>>({});
+  const fees = useQuery({ queryKey: ["enrolment-fees", school.id], queryFn: async () => { const result = await supabase.from("fee_types").select("id,name,year,term").eq("school_id", school.id).eq("active", true).order("name"); if (result.error) throw result.error; return result.data; } });
   const [profile, setProfile] = useState<StuRow | null>(null);
 
   const { data } = useQuery({
@@ -128,22 +126,26 @@ function Students() {
   async function add(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = Object.fromEntries(new FormData(e.currentTarget)) as Record<string, string | undefined>;
-    const { error } = await supabase.from("students").insert({
-      school_id: school.id, reg_number: (f["reg_number"] ?? "").trim(), first_name: (f["first_name"] ?? "").trim(), last_name: (f["last_name"] ?? "").trim(),
-      gender: (f["gender"] || null) as "M" | null, grade: f["grade"] ?? "Grade 1", class_name: f["class_name"] || null, boarding: f["boarding"] === "on",
-      guardian_name: f["guardian_name"] || null, guardian_phone: f["guardian_phone"] || null,
-      opening_balance: Number(f["opening_balance"] || 0),
-    });
+    if (saving) return;
+    const arrears = Object.entries(opening).map(([fee_type_id, amount]) => ({ fee_type_id, amount: Number(amount || 0) }));
+    if (arrears.some((i) => !Number.isFinite(i.amount) || i.amount < 0)) { toast.error("Enter valid arrears amounts"); return; }
+    setSaving(true);
+    const { error } = await supabase.rpc("enrol_student", { _school: school.id, _student: {
+      reg_number: (f["reg_number"] ?? "").trim(), first_name: (f["first_name"] ?? "").trim(), last_name: (f["last_name"] ?? "").trim(),
+      gender: f["gender"] || "", grade: f["grade"] ?? "Grade 1", class_name: f["class_name"] || "", boarding: f["boarding"] === "on",
+      guardian_name: f["guardian_name"] || "", guardian_phone: f["guardian_phone"] || "",
+    }, _arrears: arrears });
+    setSaving(false);
     if (error) { toast.error(error.code === "23505" ? "That registration number already exists" : error.message); return; }
-    toast.success("Student added");
-    setOpen(false);
-    qc.invalidateQueries({ queryKey: ["students", school.id] });
+    toast.success("Student and arrears saved");
+    setOpen(false); setOpening({});
+    void qc.invalidateQueries();
   }
 
   const rows = data?.rows ?? [];
   return (
     <>
-      <PageHeader title="Students" sub={`${data?.count ?? 0} students`} action={can("students") && <Button onClick={() => setOpen(true)}>Add student</Button>} />
+      <PageHeader title="Students" sub={`${data?.count ?? 0} students`} action={can("students") && <Button onClick={() => { setOpening({}); setOpen(true); }}>Add student</Button>} />
       <div className="mb-4 flex flex-col gap-2 sm:flex-row">
         <Input placeholder="Search name, reg no, guardian phone…" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} className="h-10" />
         <select className={`${selectCls} sm:w-44`} value={grade} onChange={(e) => { setGrade(e.target.value); setPage(0); }}>
@@ -198,9 +200,18 @@ function Students() {
             <label className="flex items-end gap-2 pb-2 text-sm"><input type="checkbox" name="boarding" /> Boarder</label>
             <div><Label>Guardian name</Label><Input name="guardian_name" /></div>
             <div><Label>Guardian phone</Label><Input name="guardian_phone" placeholder="07…" /></div>
-            <div className="col-span-2"><Label>Opening balance (general arrears)</Label><Input name="opening_balance" type="number" step="0.01" defaultValue="0" />
-              <p className="mt-1 text-xs text-muted-foreground">After saving, open the student's profile to record arrears per fee type (e.g. Tuition $20, General Levy $75).</p></div>
-            <Button className="col-span-2">Save student</Button>
+            {can("finance") && <div className="col-span-2 space-y-2 border-t pt-3">
+              <Label>Opening arrears by fee type</Label>
+              {fees.isPending && <p className="text-sm text-muted-foreground">Loading fee types…</p>}
+              {fees.isError && <p className="text-sm text-destructive">Fee types could not load. Reconnect and try again.</p>}
+              {fees.data?.length === 0 && <p className="text-sm text-muted-foreground">No fee types configured.</p>}
+              {(fees.data ?? []).map((fee) => <div key={fee.id} className="flex items-center justify-between gap-3">
+                <Label htmlFor={`opening-${fee.id}`}>{fee.name} · {fee.year}, period {fee.term}</Label>
+                <Input id={`opening-${fee.id}`} aria-label={`${fee.name} opening arrears`} className="w-28 text-right" type="number" min="0" step="0.01" value={opening[fee.id] ?? "0"} onChange={(e) => setOpening({ ...opening, [fee.id]: e.target.value })} />
+              </div>)}
+              <div className="flex justify-between border-t pt-2 text-sm font-semibold"><span>Total opening arrears</span><span>{money(Object.values(opening).reduce((s, v) => s + Number(v || 0), 0), school.currency)}</span></div>
+            </div>}
+            <Button disabled={saving || (can("finance") && (fees.isPending || fees.isError))} className="col-span-2">{saving ? "Saving…" : "Save student"}</Button>
           </form>
         </DialogContent>
       </Dialog>

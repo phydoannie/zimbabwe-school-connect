@@ -43,6 +43,13 @@
       "when": 1794631916414,
       "tag": "0005_invoicing_terms_arrears",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794722631452,
+      "tag": "0006_arrears_totals_offline_collection",
+      "breakpoints": true
     }
   ]
 }

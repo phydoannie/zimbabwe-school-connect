@@ -1,0 +1,92 @@
+import Dexie, { type Table } from 'dexie';
+import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
+import type { ReceiptData } from './pdf';
+
+type Student = Database['public']['Tables']['students']['Row'];
+type Fee = Database['public']['Tables']['fee_types']['Row'];
+type Balance = Database['public']['Functions']['debtors_by_fee']['Returns'][number];
+export type CollectionPack = { key: string; userId: string; schoolId: string; expiresAt: number; students: Student[]; fees: Fee[]; balances: Balance[]; syncedReferences?: string[] };
+export type QueuedPayment = { id: string; userId: string; schoolId: string; studentId: string; receipt: ReceiptData; items: { fee_type_id: string; amount: number }[]; status: 'pending' | 'synced'; error?: string; officialNumber?: string };
+class CollectionDatabase extends Dexie {
+  declare packs: Table<CollectionPack, string>;
+  declare payments: Table<QueuedPayment, string>;
+  constructor() { super('schoolsys-collections-v1'); this.version(1).stores({ packs: 'key, userId, schoolId', payments: 'id, [userId+schoolId], status' }); }
+}
+let database: CollectionDatabase | undefined;
+function db() { return database ??= new CollectionDatabase(); }
+export function collectionChanged() { if (typeof window !== 'undefined') window.dispatchEvent(new Event('collections-changed')); }
+export async function readCollectionPack(userId: string, schoolId: string) {
+  const pack = await db().packs.get(`${userId}:${schoolId}`);
+  return pack && pack.expiresAt > Date.now() ? pack : null;
+}
+export async function listPayments(userId: string, schoolId: string) {
+  return db().payments.where('[userId+schoolId]').equals([userId, schoolId]).toArray();
+}
+export async function saveCollectionPack(pack: CollectionPack) { await db().packs.put(pack); collectionChanged(); }
+export async function prepareCollection(userId: string, schoolId: string, expiresAt: number) {
+  const students: Student[] = [];
+  for (let page = 0; ; page++) {
+    const { data, error } = await supabase.from('students').select('*').eq('school_id', schoolId).eq('status', 'active').order('id').range(page * 1000, page * 1000 + 999);
+    if (error) throw error;
+    students.push(...(data ?? []));
+    if ((data?.length ?? 0) < 1000) break;
+  }
+  const fees = await supabase.from('fee_types').select('*').eq('school_id', schoolId);
+  if (fees.error) throw fees.error;
+  const balances: Balance[] = [];
+  for (let page = 0; ; page++) {
+    const result = await supabase.rpc('debtors_by_fee', { _school: schoolId }).order('student_id').order('fee_type_id').range(page * 1000, page * 1000 + 999);
+    if (result.error) throw result.error;
+    balances.push(...(result.data ?? []));
+    if ((result.data?.length ?? 0) < 1000) break;
+  }
+  const { data } = await supabase.auth.getSession();
+  if (data.session?.user.id !== userId) throw new Error('Sign in again before saving records');
+  const pending = (await listPayments(userId, schoolId)).filter((p) => p.status === 'pending');
+  const syncedReferences: string[] = [];
+  for (const payment of pending) {
+    const result = await supabase.from('payment_receipts').select('id').eq('school_id', schoolId).eq('client_reference', payment.id).maybeSingle();
+    if (result.error) throw result.error;
+    if (result.data) syncedReferences.push(payment.id);
+  }
+  await saveCollectionPack({ key: `${userId}:${schoolId}`, userId, schoolId, expiresAt: Math.min(expiresAt, Date.now() + 86400000), students, fees: fees.data ?? [], balances, syncedReferences });
+}
+export function applyPending(balances: Balance[], payments: QueuedPayment[], studentId: string) {
+  return balances.filter((b) => b.student_id === studentId).map((b) => {
+    const amount = payments.filter((p) => p.studentId === studentId && p.status === 'pending').flatMap((p) => p.items).filter((i) => i.fee_type_id === b.fee_type_id).reduce((s, i) => s + i.amount, 0);
+    return { ...b, paid: Math.round((Number(b.paid) + amount) * 100) / 100, balance: Math.round((Number(b.balance) - amount) * 100) / 100 };
+  });
+}
+export async function queuePayment(payment: QueuedPayment) {
+  const pack = await readCollectionPack(payment.userId, payment.schoolId);
+  if (!pack || !pack.students.some((s) => s.id === payment.studentId)) throw new Error('Reconnect to save this student for offline collection');
+  if (!payment.receipt.method.startsWith('Cash (') || payment.items.length === 0 || payment.items.some((i) => !Number.isFinite(i.amount) || i.amount <= 0 || !pack.fees.some((f) => f.id === i.fee_type_id))) throw new Error('Choose cash and valid fee amounts');
+  await db().payments.add(payment); collectionChanged();
+}
+let syncing: Promise<void> | undefined;
+export function syncPayments(userId: string, schoolId: string) {
+  if (syncing) return syncing;
+  syncing = (async () => {
+    const { data } = await supabase.auth.getUser();
+    if (data.user?.id !== userId) throw new Error('Sign in again to sync receipts');
+    for (const payment of (await listPayments(userId, schoolId)).filter((p) => p.status === 'pending')) {
+      try {
+        const r = payment.receipt;
+        const result = await supabase.rpc('sync_cash_payment', { _school: schoolId, _student: payment.studentId, _client_reference: payment.id, _paid_on: r.paid_on, _year: r.year, _term: r.term, _method: r.method, _reference: r.reference ?? '', _notes: r.notes ?? '', _items: payment.items });
+        if (result.error) throw result.error;
+        const receipt = await supabase.from('payment_receipts').select('receipt_number').eq('id', result.data).single();
+        if (receipt.error) throw receipt.error;
+        // Refresh the authoritative pack before removing its pending balance overlay.
+        const session = await supabase.auth.getSession();
+        if (!session.data.session?.expires_at) throw new Error('Session expired');
+        await prepareCollection(userId, schoolId, session.data.session.expires_at * 1000);
+        await db().payments.update(payment.id, { status: 'synced', officialNumber: receipt.data.receipt_number, error: '' });
+      } catch (error) {
+        await db().payments.update(payment.id, { error: error instanceof Error ? error.message : 'Receipt not synced; retry when connected' });
+        throw error;
+      } finally { collectionChanged(); }
+    }
+  })().finally(() => { syncing = undefined; });
+  return syncing;
+}

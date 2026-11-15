@@ -5,6 +5,7 @@ import type { School } from "./school-context";
 
 export type ReceiptData = {
   receipt_number: string;
+  pending?: boolean;
   paid_on: string;
   method: string;
   reference: string | null;
@@ -30,7 +31,7 @@ export function receiptPdf(school: School, r: ReceiptData) {
   doc.text([school.address, school.phone, school.email].filter(Boolean).join("  •  "), 10, 22);
   doc.setTextColor(20, 20, 40);
   doc.setFontSize(12);
-  doc.text("OFFICIAL RECEIPT", 10, 38);
+  doc.text(r.pending ? "OFFLINE RECEIPT - PENDING SYNC" : "OFFICIAL RECEIPT", 10, 38);
   doc.setFontSize(9);
   doc.text(`No: ${r.receipt_number}`, w - 10, 38, { align: "right" });
   doc.text(`Date: ${r.paid_on}   Term ${r.term}, ${r.year}`, w - 10, 43, { align: "right" });
@@ -49,8 +50,8 @@ export function receiptPdf(school: School, r: ReceiptData) {
     styles: { fontSize: 9 },
     margin: { left: 10, right: 10 },
   });
-  // @ts-expect-error lastAutoTable added by plugin
-  let y = doc.lastAutoTable.finalY + 8;
+  let y = (doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 85;
+  y += 8;
   doc.text(`Payment method: ${r.method}${r.reference ? ` (Ref ${r.reference})` : ""}`, 10, y);
   y += 5;
   if (r.notes) { doc.text(doc.splitTextToSize(`Notes: ${r.notes}`, w - 20), 10, y); y += 5; }

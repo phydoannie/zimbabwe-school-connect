@@ -201,6 +201,8 @@ export type Database = {
       }
       payment_receipts: {
         Row: {
+          client_payload: Json | null
+          client_reference: string | null
           created_at: string
           id: string
           method: string
@@ -221,6 +223,8 @@ export type Database = {
           year: number
         }
         Insert: {
+          client_payload?: Json | null
+          client_reference?: string | null
           created_at?: string
           id?: string
           method: string
@@ -241,6 +245,8 @@ export type Database = {
           year: number
         }
         Update: {
+          client_payload?: Json | null
+          client_reference?: string | null
           created_at?: string
           id?: string
           method?: string
@@ -836,6 +842,10 @@ export type Database = {
           student_id: string
         }[]
       }
+      enrol_student: {
+        Args: { _arrears: Json; _school: string; _student: Json }
+        Returns: string
+      }
       has_perm: { Args: { _perm: string; _school: string }; Returns: boolean }
       invoice_fee: {
         Args: {
@@ -883,6 +893,10 @@ export type Database = {
         }
         Returns: string
       }
+      save_student_arrears: {
+        Args: { _items: Json; _student: string }
+        Returns: undefined
+      }
       set_sync_device_status: {
         Args: { _device: string; _school: string; _status: string }
         Returns: undefined
@@ -897,6 +911,21 @@ export type Database = {
           name: string
           paid: number
         }[]
+      }
+      sync_cash_payment: {
+        Args: {
+          _client_reference: string
+          _items: Json
+          _method: string
+          _notes: string
+          _paid_on: string
+          _reference: string
+          _school: string
+          _student: string
+          _term: number
+          _year: number
+        }
+        Returns: string
       }
       void_receipt: {
         Args: { _reason: string; _receipt: string }

@@ -13,5 +13,6 @@
 - Staff creation and credential changes run through authenticated server functions that authorize school management before loading the privileged client; passwords are never stored in application tables.
 - Database has_perm is authoritative; client ROLE_PERMS only controls visible actions and must mirror it.
 - Initial administrator provisioning is a one-time administrative operation, never a public bootstrap endpoint or hardcoded login bypass.
-- Offline phase one persists only successful school-scoped query views in IndexedDB per user, bounded by session expiry; offline writes stay disabled until idempotent synchronization is implemented, preserving financial rules.
+- Offline views and collection packs are isolated by user and school and bounded by session expiry; only cash receipts may be queued offline, with immutable UUID references and server-authorized idempotent replay.
+- Debt RPCs share student_balances as the fee ledger; enrolment and arrears edits use atomic audited RPCs so overall totals cannot diverge from fee totals.
 - App-shell caching uses vite-plugin-pwa generateSW and a single preview-safe registrar; never cache auth or data API responses in the service worker.

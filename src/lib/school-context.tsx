@@ -60,7 +60,7 @@ export function SchoolProvider({ userId, email, children }: { userId: string; em
       memberships,
       school: current?.schools ?? null,
       role: current?.role ?? null,
-      can: (p) => !!current && (online || p === 'view' || p === 'reports') && (ROLE_PERMS[current.role] ?? []).includes(p),
+      can: (p) => !!current && (online || p === 'view' || p === 'reports' || p === 'finance') && (ROLE_PERMS[current.role] ?? []).includes(p),
       switchSchool: (id) => {
         localStorage.setItem(KEY, id);
         setCurrentId(id);

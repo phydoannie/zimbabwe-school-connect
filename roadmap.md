@@ -12,3 +12,8 @@
 - [ ] Phase 2: complete indexed school records, student/fee/expense queue and conflict-safe synchronization
 - [ ] Phase 3: idempotent offline payments, receipt numbering and balance updates
 - [ ] Phase 4: backups, device conflict recovery and published Android/offline acceptance tests
+
+# Current priority: arrears and phase-one offline collection
+- [x] Apply consistent fee-level and overall balances, atomic enrolment and arrears saving
+- [ ] Offline cash collection, saved student search, receipt outbox and retry-safe sync
+- [ ] Financial regression tests and signed-in offline collection verification
