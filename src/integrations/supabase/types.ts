@@ -847,6 +847,10 @@ export type Database = {
         Returns: string
       }
       has_perm: { Args: { _perm: string; _school: string }; Returns: boolean }
+      import_students: {
+        Args: { _rows: Json; _school: string }
+        Returns: number
+      }
       invoice_fee: {
         Args: {
           _fee_type: string

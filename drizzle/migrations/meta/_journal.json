@@ -50,6 +50,13 @@
       "when": 1794722631452,
       "tag": "0006_arrears_totals_offline_collection",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794828865257,
+      "tag": "0007_entered_arrears_and_student_import",
+      "breakpoints": true
     }
   ]
 }
