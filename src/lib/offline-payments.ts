@@ -59,15 +59,19 @@ export function applyPending(balances: Balance[], payments: QueuedPayment[], stu
   });
 }
 export async function queuePayment(payment: QueuedPayment) {
+  const session = await supabase.auth.getSession();
+  if (session.data.session?.user.id !== payment.userId || !session.data.session.expires_at || session.data.session.expires_at * 1000 <= Date.now()) throw new Error('Sign in again before collecting');
   const pack = await readCollectionPack(payment.userId, payment.schoolId);
   if (!pack || !pack.students.some((s) => s.id === payment.studentId)) throw new Error('Reconnect to save this student for offline collection');
-  if (!payment.receipt.method.startsWith('Cash (') || payment.items.length === 0 || payment.items.some((i) => !Number.isFinite(i.amount) || i.amount <= 0 || !pack.fees.some((f) => f.id === i.fee_type_id))) throw new Error('Choose cash and valid fee amounts');
+  if (!['Cash (USD)', 'Cash (ZiG)'].includes(payment.receipt.method) || payment.status !== 'pending' || payment.items.length === 0 || payment.items.some((i) => !Number.isFinite(i.amount) || i.amount <= 0 || Math.abs(i.amount * 100 - Math.round(i.amount * 100)) > 0.000001 || !pack.fees.some((f) => f.id === i.fee_type_id)) || Math.round(payment.items.reduce((sum, item) => sum + item.amount, 0) * 100) !== Math.round(payment.receipt.total * 100)) throw new Error('Choose cash and valid fee amounts');
   await db().payments.add(payment); collectionChanged();
 }
-let syncing: Promise<void> | undefined;
+const syncing = new Map<string, Promise<void>>();
 export function syncPayments(userId: string, schoolId: string) {
-  if (syncing) return syncing;
-  syncing = (async () => {
+  const key = `${userId}:${schoolId}`;
+  const existing = syncing.get(key);
+  if (existing) return existing;
+  const task = (async () => {
     const { data } = await supabase.auth.getUser();
     if (data.user?.id !== userId) throw new Error('Sign in again to sync receipts');
     for (const payment of (await listPayments(userId, schoolId)).filter((p) => p.status === 'pending')) {
@@ -87,6 +91,7 @@ export function syncPayments(userId: string, schoolId: string) {
         throw error;
       } finally { collectionChanged(); }
     }
-  })().finally(() => { syncing = undefined; });
-  return syncing;
+  })().finally(() => { syncing.delete(key); });
+  syncing.set(key, task);
+  return task;
 }

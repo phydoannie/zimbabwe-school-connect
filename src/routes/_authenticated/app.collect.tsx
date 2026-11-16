@@ -11,7 +11,7 @@ import { PageHeader, Card, selectCls } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { applyPending, collectionChanged, listPayments, queuePayment, readCollectionPack, syncPayments, type CollectionPack, type QueuedPayment } from "@/lib/offline-payments";
+import { applyPending, collectionChanged, listPayments, prepareCollection, queuePayment, readCollectionPack, syncPayments, type CollectionPack, type QueuedPayment } from "@/lib/offline-payments";
 
 export const Route = createFileRoute("/_authenticated/app/collect")({
   head: () => pageHead('Collect fees', 'Collect multiple school fees and issue an official receipt.'),
@@ -44,8 +44,9 @@ function Collect() {
     const changed = () => { void load(); };
     const connection = () => setOnline(navigator.onLine);
     connection(); void load();
+    const expiryCheck = setInterval(changed, 30000);
     window.addEventListener('online', connection); window.addEventListener('offline', connection); window.addEventListener('collections-changed', changed);
-    return () => { disposed = true; window.removeEventListener('online', connection); window.removeEventListener('offline', connection); window.removeEventListener('collections-changed', changed); };
+    return () => { disposed = true; clearInterval(expiryCheck); window.removeEventListener('online', connection); window.removeEventListener('offline', connection); window.removeEventListener('collections-changed', changed); };
   }, [userId, school.id]);
   const search = useQuery({
     queryKey: ["stu-search", school.id, q], enabled: online && can('finance') && q.length >= 2 && !stu,
@@ -76,7 +77,11 @@ function Collect() {
       try {
         const id = crypto.randomUUID();
         const receipt = { receipt_number: `OFF-${id.slice(0, 8).toUpperCase()}`, pending: true, paid_on: new Date().toISOString().slice(0, 10), year: school.current_year, term: school.current_term, method, reference, notes, total, received_by_name: "Bursar", voided: false, student: stu, items: items.map((i) => { const balance = balances.find((b) => b.fee_type_id === i.fee_type_id); return { name: balance?.name ?? "Fee", amount: i.amount, balance: Number(balance?.balance ?? 0) - i.amount }; }) };
-        if (online && !pack) { toast.error("Wait until collection records are saved, then retry"); return; }
+        if (online && !(await readCollectionPack(userId, school.id))) {
+          const session = await supabase.auth.getSession();
+          if (!session.data.session?.expires_at) throw new Error('Sign in again before collecting');
+          await prepareCollection(userId, school.id, session.data.session.expires_at * 1000);
+        }
         await queuePayment({ id, userId, schoolId: school.id, studentId: stu.id, receipt, items, status: 'pending' });
         toast.success("Cash receipt saved on this device");
         setAmounts({}); setReference(""); setNotes(""); setStu(null); setQ("");
@@ -173,7 +178,7 @@ function Collect() {
               <span className="text-sm text-muted-foreground">Total</span>
               <span className="font-display text-2xl font-bold">{money(total, school.currency)}</span>
             </div>
-            <Button variant="gold" className="h-12 w-full" disabled={busy || total <= 0 || count === 0 || (!online && (!pack || !method.startsWith("Cash (")))} onClick={submit}>Issue one receipt</Button>
+             <Button variant="gold" className="h-12 w-full" disabled={busy || total <= 0 || count === undefined || count === 0 || (!online && (!pack || !method.startsWith("Cash (")))} onClick={submit}>{busy ? 'Saving receipt…' : 'Issue one receipt'}</Button>
           </Card>
         </div>
       )}

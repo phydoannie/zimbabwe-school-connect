@@ -30,17 +30,17 @@ function StudentProfile({ student, onClose }: { student: StuRow; onClose: () => 
 
   const bal = useQuery({
     queryKey: ["balances", school.id, student.id],
-    queryFn: async () => (await supabase.rpc("student_balances", { _student: student.id })).data ?? [],
+    queryFn: async () => { const result = await supabase.rpc("student_balances", { _student: student.id }); if (result.error) throw result.error; return result.data ?? []; },
   });
   const arrears = useQuery({
     queryKey: ["arrears", school.id, student.id],
-    queryFn: async () => (await supabase.from("student_fee_arrears").select("fee_type_id, amount").eq("student_id", student.id)).data ?? [],
+    queryFn: async () => { const result = await supabase.from("student_fee_arrears").select("fee_type_id, amount").eq("school_id", school.id).eq("student_id", student.id); if (result.error) throw result.error; return result.data ?? []; },
   });
 
   // Initialize the editor once both queries have loaded.
   if (amounts === null && bal.data && arrears.data) {
     const init: Record<string, string> = {};
-    for (const b of bal.data) init[b.fee_type_id] = "";
+    for (const b of bal.data) init[b.fee_type_id] = "0";
     for (const a of arrears.data) init[a.fee_type_id] = String(Number(a.amount));
     setAmounts(init);
   }
@@ -71,6 +71,7 @@ function StudentProfile({ student, onClose }: { student: StuRow; onClose: () => 
           <span className={`font-display text-xl font-bold ${total > 0 ? "text-destructive" : "text-success"}`}>{money(total, school.currency)}</span>
         </div>
         <div className="mt-3 space-y-2">
+          {(bal.isError || arrears.isError) && <p className="text-sm text-destructive">Student balances could not load. Reconnect and try again.</p>}
           {(bal.data ?? []).length === 0 && <p className="text-sm text-muted-foreground">No fee types for this class this term.</p>}
           {(bal.data ?? []).map((b) => (
             <div key={b.fee_type_id} className="rounded-lg border p-3">
@@ -81,8 +82,9 @@ function StudentProfile({ student, onClose }: { student: StuRow; onClose: () => 
               <div className="mt-1 text-xs text-muted-foreground">Due {money(b.due, school.currency)} · Paid {money(b.paid, school.currency)}</div>
               {can("finance") && amounts && (
                 <div className="mt-2 flex items-center gap-2">
-                  <Label className="text-xs">Arrears (older unpaid terms)</Label>
+                  <Label htmlFor={`arrears-${b.fee_type_id}`} className="text-xs">Arrears (older unpaid terms)</Label>
                   <Input type="number" min="0" step="0.01" inputMode="decimal" className="h-9 w-28 text-right"
+                    id={`arrears-${b.fee_type_id}`} aria-label={`${b.name} arrears`}
                     value={amounts[b.fee_type_id] ?? ""} placeholder="0.00"
                     onChange={(e) => setAmounts({ ...amounts, [b.fee_type_id]: e.target.value })} />
                 </div>
@@ -91,7 +93,7 @@ function StudentProfile({ student, onClose }: { student: StuRow; onClose: () => 
           ))}
         </div>
         {can("finance") && (bal.data ?? []).length > 0 && (
-          <Button variant="gold" className="mt-3 w-full" disabled={busy || !amounts} onClick={saveArrears}>Save arrears</Button>
+          <Button variant="gold" className="mt-3 w-full" disabled={busy || !amounts || bal.isError || arrears.isError} onClick={saveArrears}>Save arrears</Button>
         )}
       </DialogContent>
     </Dialog>

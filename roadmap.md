@@ -15,5 +15,5 @@
 
 # Current priority: arrears and phase-one offline collection
 - [x] Apply consistent fee-level and overall balances, atomic enrolment and arrears saving
-- [ ] Offline cash collection, saved student search, receipt outbox and retry-safe sync
-- [ ] Financial regression tests and signed-in offline collection verification
+- [x] Offline cash collection, saved student search, receipt outbox and retry-safe sync
+- [x] Financial regression tests and signed-in offline collection verification (24 tests; $5 cash sync/replay, fee-sum totals and isolated profile arrears; test values restored)
