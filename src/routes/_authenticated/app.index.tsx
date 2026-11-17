@@ -5,6 +5,7 @@ import { useCurrentSchool } from "@/lib/school-context";
 import { money } from "@/lib/constants";
 import { PageHeader, Stat, Card } from "@/components/page";
 import { Button } from "@/components/ui/button";
+import { useOfflineSchool, overallDebts } from "@/lib/use-offline-school";
 import { pageHead } from '@/lib/metadata';
 
 export const Route = createFileRoute("/_authenticated/app/")({
@@ -13,9 +14,10 @@ export const Route = createFileRoute("/_authenticated/app/")({
 });
 
 function Dashboard() {
+  const offline = useOfflineSchool();
   const { school, can } = useCurrentSchool();
   const fin = can("reports");
-  const { data } = useQuery({
+  const dashboard = useQuery({ enabled: offline.online,
     queryKey: ["dashboard", school.id],
     queryFn: async () => {
       const [st, rc, ex, db] = await Promise.all([
@@ -37,6 +39,16 @@ function Dashboard() {
     },
   });
 
+  const debts = overallDebts(offline.pack?.balances ?? []);
+  const savedReceipts = (offline.pack?.receipts ?? []).filter((r) => !r.voided && r.year === school.current_year && r.term === school.current_term);
+  const data = offline.online ? dashboard.data : {
+    students: offline.pack?.students.filter((s) => s.status === 'active').length ?? 0,
+    collected: (offline.pack?.cashData?.entries ?? []).filter((e) => e.kind === 'in' && savedReceipts.some((r) => r.id === e.id)).reduce((n,e) => n + e.amount, 0),
+    recent: savedReceipts.slice(0,6),
+    expenses: (offline.pack?.cashData?.expenses ?? []).filter((e) => e.spent_on >= `${school.current_year}-01-01`).reduce((n,e) => n + Number(e.amount), 0),
+    outstanding: debts.reduce((n,d) => n + Math.max(0, Number(d.balance)),0),
+    debtors: debts.filter((d) => Number(d.balance) > 0).length,
+  };
   return (
     <>
       <PageHeader

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useOfflineSchool } from "@/lib/use-offline-school";
 import { pageHead } from '@/lib/metadata';
 
 export const Route = createFileRoute("/_authenticated/app/fees")({
@@ -19,6 +20,7 @@ export const Route = createFileRoute("/_authenticated/app/fees")({
 
 function Fees() {
   const { school, can } = useCurrentSchool();
+  const offline = useOfflineSchool();
   const qc = useQueryClient();
   const [name, setName] = useState("");
   const [account, setAccount] = useState(ACCOUNTS[0] ?? "Tuition");
@@ -30,12 +32,13 @@ function Fees() {
   const [invGrades, setInvGrades] = useState<string[]>([]);
   const [invBusy, setInvBusy] = useState(false);
 
-  const { data } = useQuery({
+  const feeQuery = useQuery({ enabled: offline.online,
     queryKey: ["fee_types", school.id, school.current_year, school.current_term],
     queryFn: async () => (await supabase.from("fee_types").select("*").eq("school_id", school.id)
       .eq("year", school.current_year).eq("term", school.current_term).order("name")).data ?? [],
   });
 
+  const data = offline.online ? feeQuery.data : offline.pack?.fees.filter((f) => f.year === school.current_year && f.term === school.current_term);
   async function add() {
     if (!name.trim() || !(Number(amount) > 0)) { toast.error("Enter a fee name and amount"); return; }
     setBusy(true);
@@ -116,7 +119,7 @@ function Fees() {
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-semibold">{money(f.amount, school.currency)}</span>
-                {can("finance") && f.active && <Button size="sm" variant="gold" onClick={() => openInvoice(f)}>Invoice</Button>}
+                {offline.online && can("finance") && f.active && <Button size="sm" variant="gold" onClick={() => openInvoice(f)}>Invoice</Button>}
                 {can("fees_setup") && <Button size="sm" variant="outline" onClick={() => toggle(f.id, !f.active)}>{f.active ? "Disable" : "Enable"}</Button>}
               </div>
             </div>

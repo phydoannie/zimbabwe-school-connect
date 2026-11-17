@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCurrentSchool } from '@/lib/school-context';
 import { ACCOUNTS, EXPENSE_CATEGORIES, PAYMENT_METHODS, money } from '@/lib/constants';
 import { validExpenseAmount } from '@/lib/accounts';
+import { useOfflineSchool } from "@/lib/use-offline-school";
 import { pageHead } from '@/lib/metadata';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,15 +21,18 @@ export const Route = createFileRoute("/_authenticated/app/expenses")({
 });
 
 function Expenses() {
+  const offline = useOfflineSchool();
   const { school, can, userId } = useCurrentSchool(); const qc = useQueryClient();
   const [open,setOpen] = useState(false); const [busy,setBusy] = useState(false);
   const [search,setSearch] = useState(''); const [account,setAccount] = useState(''); const [category,setCategory] = useState('');
   const [from,setFrom] = useState(`${school.current_year}-01-01`); const [to,setTo] = useState('');
-  const { data = [], error, isLoading } = useQuery({ queryKey: ['expenses',school.id,from,to,account,category], enabled: can('finance') || can('reports'), queryFn: async () => {
+  const expenseQuery = useQuery({ queryKey: ['expenses',school.id,from,to,account,category], enabled: offline.online && (can('finance') || can('reports')), queryFn: async () => {
     let query = supabase.from('expenses').select('*').eq('school_id',school.id).order('spent_on',{ascending:false});
     if(from) query=query.gte('spent_on',from); if(to) query=query.lte('spent_on',to); if(account) query=query.eq('account',account); if(category) query=query.eq('category',category);
     const r=await query; if(r.error)throw r.error; return r.data??[];
   } });
+  const { error, isLoading } = expenseQuery;
+  const data = offline.online ? expenseQuery.data ?? [] : (offline.pack?.cashData?.expenses ?? []).filter((e) => (!from || e.spent_on >= from) && (!to || e.spent_on <= to) && (!account || e.account === account) && (!category || e.category === category));
   const rows=data.filter(r => `${r.description} ${r.voucher_reference??''} ${r.method}`.toLowerCase().includes(search.toLowerCase()));
   async function save(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault(); if(!can('finance'))return; const f=new FormData(e.currentTarget); const amount=Number(f.get('amount'));
@@ -41,7 +45,7 @@ function Expenses() {
     const url=URL.createObjectURL(new Blob([content],{type:'text/csv;charset=utf-8;'})); const a=document.createElement('a');a.href=url;a.download='expenses.csv';a.click();URL.revokeObjectURL(url);
   }
   if(!can('reports')&&!can('finance'))return <Empty>You do not have access to expenses.</Empty>;
-  return <><PageHeader title="Expenses" sub={`${rows.length} entries · ${money(rows.reduce((s,r)=>s+Number(r.amount),0),school.currency)}`} action={<div className="flex gap-2"><Button variant="outline" onClick={csv} disabled={!rows.length}><Download className="h-4 w-4"/>CSV</Button>{can('finance')&&<Button onClick={()=>setOpen(true)}><Plus className="h-4 w-4"/>Add expense</Button>}</div>} />
+  return <><PageHeader title="Expenses" sub={`${rows.length} entries · ${money(rows.reduce((s,r)=>s+Number(r.amount),0),school.currency)}`} action={<div className="flex gap-2"><Button variant="outline" onClick={csv} disabled={!rows.length}><Download className="h-4 w-4"/>CSV</Button>{offline.online&&can('finance')&&<Button onClick={()=>setOpen(true)}><Plus className="h-4 w-4"/>Add expense</Button>}</div>} />
     <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
       <Input aria-label="Search expenses" placeholder="Description or voucher" value={search} onChange={e=>setSearch(e.target.value)}/>
       <select aria-label="Filter account" className={selectCls} value={account} onChange={e=>setAccount(e.target.value)}><option value="">All accounts</option>{ACCOUNTS.map(a=><option key={a}>{a}</option>)}</select>
@@ -49,7 +53,7 @@ function Expenses() {
       <div><Label htmlFor="dateFrom">From</Label><Input id="dateFrom" type="date" value={from} onChange={e=>setFrom(e.target.value)}/></div>
       <div><Label htmlFor="dateTo">To</Label><Input id="dateTo" type="date" value={to} onChange={e=>setTo(e.target.value)}/></div>
     </div>
-    {error?<Empty>Expenses could not be loaded.</Empty>:isLoading?<Empty>Loading expenses…</Empty>:!rows.length?<Empty>No expenses match these filters.</Empty>:<div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="border-b text-muted-foreground"><tr>{['Date','Description','Category / Account','Voucher / Method','Amount'].map(h=><th key={h} className="px-3 py-3">{h}</th>)}</tr></thead><tbody className="divide-y">{rows.map(r=><tr key={r.id}><td className="whitespace-nowrap px-3 py-4">{r.spent_on}</td><td className="min-w-40 px-3 py-4">{r.description}</td><td className="px-3 py-4">{r.category}<div className="text-muted-foreground">{r.account}</div></td><td className="px-3 py-4">{r.voucher_reference??'—'}<div className="text-muted-foreground">{r.method}</div></td><td className="whitespace-nowrap px-3 py-4 font-semibold">{money(r.amount,school.currency)}</td></tr>)}</tbody></table></div>}
+    {error?<Empty>Expenses could not be loaded.</Empty>:offline.online&&isLoading?<Empty>Loading expenses…</Empty>:!rows.length?<Empty>No expenses match these filters.</Empty>:<div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="border-b text-muted-foreground"><tr>{['Date','Description','Category / Account','Voucher / Method','Amount'].map(h=><th key={h} className="px-3 py-3">{h}</th>)}</tr></thead><tbody className="divide-y">{rows.map(r=><tr key={r.id}><td className="whitespace-nowrap px-3 py-4">{r.spent_on}</td><td className="min-w-40 px-3 py-4">{r.description}</td><td className="px-3 py-4">{r.category}<div className="text-muted-foreground">{r.account}</div></td><td className="px-3 py-4">{r.voucher_reference??'—'}<div className="text-muted-foreground">{r.method}</div></td><td className="whitespace-nowrap px-3 py-4 font-semibold">{money(r.amount,school.currency)}</td></tr>)}</tbody></table></div>}
     <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-h-[90vh] overflow-y-auto"><DialogHeader><DialogTitle>Add expense</DialogTitle></DialogHeader><form onSubmit={save} className="space-y-3">
       <div><Label htmlFor="spentOn">Date</Label><Input id="spentOn" name="spent_on" type="date" required defaultValue={new Date().toISOString().slice(0,10)}/></div>
       <div><Label htmlFor="expenseDescription">Description</Label><Input id="expenseDescription" name="description" required/></div>

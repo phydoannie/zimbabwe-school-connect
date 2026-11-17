@@ -38,6 +38,7 @@ export function SchoolProvider({ userId, email, children }: { userId: string; em
   useEffect(() => setCurrentId(localStorage.getItem(KEY)), []);
 
   const { data, isLoading } = useQuery({
+    enabled: online,
     queryKey: ["memberships", userId],
     queryFn: async () => {
       const { data, error } = await supabase

@@ -13,6 +13,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
+import { readOfflineAccess, clearOfflineAccess } from "@/lib/offline-cache";
 import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
@@ -114,6 +115,11 @@ function RootComponent() {
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+      if (event === "SIGNED_OUT" && navigator.onLine) {
+        void readOfflineAccess().then(async (access) => { if (access) await clearOfflineAccess(access.userId); });
+        queryClient.clear();
+      }
+      if (event === 'SIGNED_OUT' && !navigator.onLine) return;
       router.invalidate();
       if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
     });

@@ -10,6 +10,7 @@ import { PageHeader, Empty } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useOfflineSchool } from "@/lib/use-offline-school";
 import { pageHead } from '@/lib/metadata';
 
 export const Route = createFileRoute("/_authenticated/app/receipts")({
@@ -19,9 +20,10 @@ export const Route = createFileRoute("/_authenticated/app/receipts")({
 
 function Receipts() {
   const { school, role } = useCurrentSchool();
+  const offline = useOfflineSchool();
   const qc = useQueryClient();
   const [q, setQ] = useState("");
-  const { data } = useQuery({
+  const receiptQuery = useQuery({ enabled: offline.online,
     queryKey: ["receipts", school.id, q],
     queryFn: async () => {
       let r = supabase.from("payment_receipts")
@@ -32,6 +34,7 @@ function Receipts() {
     },
   });
 
+  const data = offline.online ? receiptQuery.data : (offline.pack?.receipts ?? []).filter((r) => r.receipt_number.toLowerCase().includes(q.toLowerCase()));
   function pdf(r: NonNullable<typeof data>[number]) {
     receiptPdf(school, {
       ...r, total: Number(r.total), student: r.students ?? { first_name: '', last_name: '', reg_number: '', grade: '' },
@@ -65,7 +68,7 @@ function Receipts() {
               <div className="flex items-center gap-2">
                 <span className="font-semibold">{money(r.total, school.currency)}</span>
                 <Button size="sm" variant="outline" onClick={() => pdf(r)}>PDF</Button>
-                {!r.voided && (role === "head" || role === "bursar" || role === 'admin') && <Button size="sm" variant="ghost" onClick={() => voidIt(r.id)}>Void</Button>}
+                {offline.online && !r.voided && (role === "head" || role === "bursar" || role === 'admin') && <Button size="sm" variant="ghost" onClick={() => voidIt(r.id)}>Void</Button>}
               </div>
             </div>
           ))}

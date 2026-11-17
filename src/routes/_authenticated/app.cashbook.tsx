@@ -21,7 +21,7 @@ function CashBook() {
   const { school, can } = useCurrentSchool();
   const [from, setFrom] = useState(`${school.current_year}-01-01`); const [to, setTo] = useState("");
   const [method, setMethod] = useState(""); const [opening, setOpening] = useState("0");
-  const { data, error, isLoading } = useQuery({ queryKey: ["cashbook", school.id, from, to], enabled: can("finance") || can("reports"), queryFn: () => loadCashEntries(school.id, from, to) });
+  const { data, error, isLoading } = useQuery({ queryKey: ["cashbook", school.id, from, to], enabled: can("finance") || can("reports"), networkMode: "always", queryFn: () => loadCashEntries(school.id, from, to) });
   if (!can("reports") && !can("finance")) return <Empty>You do not have access to the cash book.</Empty>;
   const entries = (data?.entries ?? []).filter((e) => !method || e.method === method);
   const rows = buildCashBook(entries, Number(opening) || 0);

@@ -6,6 +6,7 @@ import { useCurrentSchool } from "@/lib/school-context";
 import { GRADES, money } from "@/lib/constants";
 import { PageHeader, Empty, Stat, selectCls } from "@/components/page";
 import { Button } from "@/components/ui/button";
+import { overallDebts, useOfflineSchool } from "@/lib/use-offline-school";
 import { pageHead } from '@/lib/metadata';
 
 export const Route = createFileRoute("/_authenticated/app/debtors")({
@@ -17,16 +18,19 @@ type Row = { student_id: string; reg_number: string; full_name: string; grade: s
 
 function Debtors() {
   const { school } = useCurrentSchool();
+  const offline = useOfflineSchool();
   const [grade, setGrade] = useState("");
   const [fee, setFee] = useState("");
-  const all = useQuery({
+  const allQuery = useQuery({ enabled: offline.online,
     queryKey: ["debtors", school.id],
     queryFn: async () => (await supabase.rpc("debtors", { _school: school.id })).data ?? [],
   });
-  const byFee = useQuery({
+  const feeQuery = useQuery({ enabled: offline.online,
     queryKey: ["debtors_by_fee", school.id],
     queryFn: async () => (await supabase.rpc("debtors_by_fee", { _school: school.id })).data ?? [],
   });
+  const byFee = { data: offline.online ? feeQuery.data : offline.pack?.balances };
+  const all = { data: offline.online ? allQuery.data : overallDebts(offline.pack?.balances ?? []) };
   const feeNames = useMemo(() => [...new Set((byFee.data ?? []).map((r) => r.fee_name))].sort(), [byFee.data]);
 
   const rows: Row[] = (fee
@@ -57,14 +61,14 @@ function Debtors() {
       </div>
       {summary.length > 0 && (
         <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
-          <button onClick={() => setFee("")} className={`shrink-0 rounded-lg border px-3 py-2 text-left text-xs ${!fee ? "border-primary bg-primary/10" : "bg-card"}`}>
+          <Button variant="outline" onClick={() => setFee("")} className={`shrink-0 rounded-lg border px-3 py-2 text-left text-xs ${!fee ? "border-primary bg-primary/10" : "bg-card"}`}>
             <div className="font-semibold">All fees</div><div className="text-muted-foreground">overall</div>
-          </button>
+          </Button>
           {summary.map((s) => (
-            <button key={s.name} onClick={() => setFee(s.name)} className={`shrink-0 rounded-lg border px-3 py-2 text-left text-xs ${fee === s.name ? "border-primary bg-primary/10" : "bg-card"}`}>
+            <Button variant="outline" key={s.name} onClick={() => setFee(s.name)} className={`shrink-0 rounded-lg border px-3 py-2 text-left text-xs ${fee === s.name ? "border-primary bg-primary/10" : "bg-card"}`}>
               <div className="font-semibold">{s.name}</div>
               <div className="text-muted-foreground">{s.count} · {money(s.total, school.currency)}</div>
-            </button>
+            </Button>
           ))}
         </div>
       )}

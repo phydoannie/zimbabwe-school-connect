@@ -26,14 +26,14 @@ export default defineConfig({
     workbox: {
       globDirectory: 'dist/client',
       globPatterns: ['**/*.{js,css,woff2,png,ico,webmanifest}'],
-      additionalManifestEntries: [{ url: '/offline.html', revision: '1' }],
+      additionalManifestEntries: [{ url: '/app', revision: 'weekly-offline-v1' }, { url: '/offline.html', revision: '1' }],
       navigateFallback: null,
       navigateFallbackDenylist: [/^\/~oauth/, /^\/api\//, /^\/_server/],
       runtimeCaching: [
         {
           urlPattern: ({ request, url }) => request.mode === 'navigate' && url.origin === self.location.origin && !/^\/(~oauth|api\/|_server)/.test(url.pathname),
           handler: 'NetworkFirst',
-          options: { cacheName: 'schoolsys-pages', networkTimeoutSeconds: 4, expiration: { maxEntries: 40 }, cacheableResponse: { statuses: [200] }, precacheFallback: { fallbackURL: '/offline.html' } },
+          options: { cacheName: 'schoolsys-pages', networkTimeoutSeconds: 4, expiration: { maxEntries: 40 }, cacheableResponse: { statuses: [200] }, precacheFallback: { fallbackURL: '/app' } },
         },
         {
           urlPattern: ({ url }) => url.origin === self.location.origin && /\/assets\/.*-[\w-]{8,}\.(js|css|woff2|png)$/.test(url.pathname),

@@ -8,6 +8,7 @@ import { useCurrentSchool } from "@/lib/school-context";
 import { money } from "@/lib/constants";
 import { groupTotals, downloadCsv } from "@/lib/cashbook";
 import { loadCashEntries } from "@/lib/finance-data";
+import { useOfflineSchool } from "@/lib/use-offline-school";
 import { pageHead } from "@/lib/metadata";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,15 +27,18 @@ function Table({ title, rows, c, total }: { title: string; rows: { name: string;
 }
 
 function Reports() {
+  const offline = useOfflineSchool();
   const { school, can } = useCurrentSchool(); const c = school.currency;
   const [from, setFrom] = useState(`${school.current_year}-01-01`); const [to, setTo] = useState("");
   const allowed = can("reports") || can("finance");
-  const fin = useQuery({ queryKey: ["reports", school.id, from, to], enabled: allowed, queryFn: () => loadCashEntries(school.id, from, to) });
-  const debt = useQuery({ queryKey: ["reports-debt", school.id], enabled: allowed, queryFn: async () => { const r = await supabase.rpc("debtors_by_fee", { _school: school.id }); if (r.error) throw r.error; return r.data ?? []; } });
+  const fin = useQuery({ queryKey: ["reports", school.id, from, to], enabled: allowed, networkMode: "always", queryFn: () => loadCashEntries(school.id, from, to) });
+  const debtQuery = useQuery({ queryKey: ["reports-debt", school.id], enabled: allowed && offline.online, queryFn: async () => { const r = await supabase.rpc("debtors_by_fee", { _school: school.id }); if (r.error) throw r.error; return r.data ?? []; } });
   if (!allowed) return <Empty>You do not have access to reports.</Empty>;
   if (fin.error) return <Empty>Reports could not be loaded.</Empty>;
   if (fin.isLoading) return <Empty>Loading reports…</Empty>;
-  const d = fin.data!;
+  const d = fin.data;
+  if (!d) return <Empty>Connect and sync school records first.</Empty>;
+  const debt = { data: offline.online ? debtQuery.data : offline.pack?.balances };
   const income = d.entries.filter((e) => e.kind === "in"); const spend = d.entries.filter((e) => e.kind === "out");
   const tin = income.reduce((s, e) => s + e.amount, 0); const tout = spend.reduce((s, e) => s + e.amount, 0);
   const byFee = groupTotals(d.allocations, (a) => a.fee, (a) => a.amount);

@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Navigate, Outlet, useNavigate, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate, Outlet, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -10,6 +10,7 @@ import { ROLE_LABELS, type Perm } from "@/lib/constants";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { Button } from '@/components/ui/button';
+import { clearOfflineAccess } from '@/lib/offline-cache';
 import { OfflineStatus } from '@/components/offline-status';
 
 export const Route = createFileRoute("/_authenticated/app")({
@@ -33,9 +34,8 @@ const NAV: { to: string; label: string; icon: typeof Users; perm: Perm }[] = [
 
 function AppLayout() {
   const ctx = useSchool();
-  const location = useLocation();
   const [open, setOpen] = useState(false);
-  const [online, setOnline] = useState(true);
+  const [, setOnline] = useState(true);
   const qc = useQueryClient();
   const nav = useNavigate();
 
@@ -47,6 +47,7 @@ function AppLayout() {
   async function signOut() {
     await qc.cancelQueries();
     qc.clear();
+    await clearOfflineAccess(ctx.userId);
     await supabase.auth.signOut();
     nav({ to: "/auth", replace: true });
   }
@@ -105,9 +106,9 @@ function AppLayout() {
           <div className="truncate font-display font-semibold">{ctx.school.name}</div>
         </header>
         <main className={cn("mx-auto max-w-6xl p-4 md:p-8")}>
-          <fieldset disabled={!online && location.pathname !== "/app/collect"} className="min-w-0 border-0 p-0">
+          <div className="min-w-0">
             <Outlet />
-          </fieldset>
+          </div>
         </main>
       </div>
     </div>
