@@ -3,6 +3,7 @@ import { dehydrate, hydrate, type DehydratedState, type QueryClient } from '@tan
 import { OFFLINE_ACCESS_MS, offlineAccessValid } from './offline-policy';
 import type { User } from '@supabase/supabase-js';
 import type { Membership } from './school-context';
+import { subscriptionAllowsAccess } from './subscriptions';
 
 type Snapshot = { userId: string; savedAt: number; expiresAt: number; state: DehydratedState };
 type Access = { userId: string; user: Pick<User, 'id' | 'email'>; memberships: Membership[]; verifiedAt: number; expiresAt: number };
@@ -21,7 +22,7 @@ function db() { return database ??= new OfflineDatabase(); }
 export const OFFLINE_MAX_AGE = OFFLINE_ACCESS_MS;
 const LAST_USER = 'schoolsys.offlineUser';
 export async function saveOfflineAccess(user: Pick<User, 'id' | 'email'>, memberships: Membership[], now = Date.now()) {
-  const active = memberships.filter((m) => m.status === 'active' && m.schools);
+  const active = memberships.filter((m) => m.status === 'active' && m.schools && subscriptionAllowsAccess(m.subscription, now));
   if (!active.length) throw new Error('No active school access');
   const access: Access = { userId: user.id, user: { id: user.id, ...(user.email !== undefined ? { email: user.email } : {}) }, memberships: active, verifiedAt: now, expiresAt: now + OFFLINE_ACCESS_MS };
   await db().access.put(access);

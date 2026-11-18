@@ -2,13 +2,14 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ROLE_PERMS, type Perm } from "./constants";
+import { subscriptionAllowsAccess, type Subscription } from './subscriptions';
 
 export type School = {
   id: string; code: string; name: string; address: string | null; phone: string | null; email: string | null;
   slogan: string | null; logo_url: string | null; bank_details: string | null; currency: string;
   billing_cycle: string; current_year: number; current_term: number;
 };
-export type Membership = { school_id: string; role: string; status: string; full_name: string | null; schools: School | null };
+export type Membership = { school_id: string; role: string; status: string; full_name: string | null; schools: School | null; subscription?: Subscription | null };
 
 type Ctx = {
   userId: string;
@@ -16,6 +17,7 @@ type Ctx = {
   memberships: Membership[];
   school: School | null;
   role: string | null;
+  subscription: Subscription | null;
   can: (p: Perm) => boolean;
   switchSchool: (id: string) => void;
   loading: boolean;
@@ -46,7 +48,9 @@ export function SchoolProvider({ userId, email, children }: { userId: string; em
         .select("school_id, role, status, full_name, schools(*)")
         .eq("user_id", userId);
       if (error) throw error;
-      return (data ?? []) as unknown as Membership[];
+      const subscriptions = await supabase.from('school_subscriptions').select('*');
+      if (subscriptions.error) throw subscriptions.error;
+      return (data ?? []).map((m) => ({ ...m, subscription: subscriptions.data.find((s) => s.school_id === m.school_id) ?? null })) as unknown as Membership[];
     },
   });
 
@@ -61,7 +65,8 @@ export function SchoolProvider({ userId, email, children }: { userId: string; em
       memberships,
       school: current?.schools ?? null,
       role: current?.role ?? null,
-      can: (p) => !!current && (online || p === 'view' || p === 'reports' || p === 'finance') && (ROLE_PERMS[current.role] ?? []).includes(p),
+      subscription: current?.subscription ?? null,
+      can: (p) => !!current && subscriptionAllowsAccess(current.subscription) && (online || p === 'view' || p === 'reports' || p === 'finance') && (ROLE_PERMS[current.role] ?? []).includes(p),
       switchSchool: (id) => {
         localStorage.setItem(KEY, id);
         setCurrentId(id);

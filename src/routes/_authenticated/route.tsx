@@ -17,8 +17,11 @@ export const Route = createFileRoute("/_authenticated")({
     const result = await supabase.from('school_members').select('school_id, role, status, full_name, schools(*)').eq('user_id', data.user.id);
     if (result.error) throw result.error;
     const memberships = result.data ?? [];
-    context.queryClient.setQueryData(['memberships', data.user.id], memberships);
-    if (memberships.some((m) => m.status === 'active' && m.schools)) await saveOfflineAccess(data.user, memberships);
+    const subscriptions = await supabase.from('school_subscriptions').select('*');
+    if (subscriptions.error) throw subscriptions.error;
+    const verified = memberships.map((m) => ({ ...m, subscription: subscriptions.data.find((s) => s.school_id === m.school_id) ?? null }));
+    context.queryClient.setQueryData(['memberships', data.user.id], verified);
+    if (verified.some((m) => m.status === 'active' && m.schools && m.subscription?.status === 'active' && Date.parse(m.subscription.subscription_ends_at) > Date.now())) await saveOfflineAccess(data.user, verified);
     await restoreOfflineViews(context.queryClient, data.user.id).catch(() => null);
     return { user: data.user };
   },

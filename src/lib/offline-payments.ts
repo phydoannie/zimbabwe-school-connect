@@ -5,6 +5,7 @@ import type { ReceiptData } from './pdf';
 import { readOfflineAccess } from './offline-cache';
 import { ROLE_PERMS } from './constants';
 import { loadCashEntries, type CashData } from './finance-data';
+import { subscriptionAllowsAccess } from './subscriptions';
 
 type Student = Database['public']['Tables']['students']['Row'];
 type Fee = Database['public']['Tables']['fee_types']['Row'];
@@ -22,7 +23,7 @@ function db() { return database ??= new CollectionDatabase(); }
 export function collectionChanged() { if (typeof window !== 'undefined') window.dispatchEvent(new Event('collections-changed')); }
 export async function readCollectionPack(userId: string, schoolId: string): Promise<CollectionPack | null> {
   const access = await readOfflineAccess(userId);
-  if (!access?.memberships.some((m) => m.school_id === schoolId)) return null;
+  if (!access?.memberships.some((m) => m.school_id === schoolId && subscriptionAllowsAccess(m.subscription))) return null;
   const pack = await db().packs.get(`${userId}:${schoolId}`);
   return pack && pack.expiresAt > Date.now() ? pack : null;
 }
@@ -88,7 +89,7 @@ export function applyPending(balances: Balance[], payments: QueuedPayment[], stu
 export async function queuePayment(payment: QueuedPayment) {
   const access = await readOfflineAccess();
   const membership = access?.memberships.find((m) => m.school_id === payment.schoolId);
-  if (access?.userId !== payment.userId || !membership || !(ROLE_PERMS[membership.role] ?? []).includes('finance')) throw new Error('Sign in again before collecting');
+  if (access?.userId !== payment.userId || !membership || !subscriptionAllowsAccess(membership.subscription) || !(ROLE_PERMS[membership.role] ?? []).includes('finance')) throw new Error('Sign in again before collecting');
   const pack = await readCollectionPack(payment.userId, payment.schoolId);
   if (!pack || !pack.students.some((s) => s.id === payment.studentId && s.status === 'active')) throw new Error('Reconnect to save this student for offline collection');
   if (!['Cash (USD)', 'Cash (ZiG)'].includes(payment.receipt.method) || payment.status !== 'pending' || payment.items.length === 0 || payment.items.some((i) => !Number.isFinite(i.amount) || i.amount <= 0 || Math.abs(i.amount * 100 - Math.round(i.amount * 100)) > 0.000001 || !pack.fees.some((f) => f.id === i.fee_type_id)) || Math.round(payment.items.reduce((sum, item) => sum + item.amount, 0) * 100) !== Math.round(payment.receipt.total * 100)) throw new Error('Choose cash and valid fee amounts');

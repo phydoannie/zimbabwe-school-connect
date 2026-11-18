@@ -276,6 +276,21 @@ export type Database = {
           },
         ]
       }
+      platform_roles: {
+        Row: {
+          role: string
+          user_id: string
+        }
+        Insert: {
+          role?: string
+          user_id: string
+        }
+        Update: {
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           id: string
@@ -327,6 +342,38 @@ export type Database = {
             foreignKeyName: "school_members_school_id_fkey"
             columns: ["school_id"]
             isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      school_subscriptions: {
+        Row: {
+          school_id: string
+          slug: string
+          status: string
+          subscription_ends_at: string
+          updated_at: string
+        }
+        Insert: {
+          school_id: string
+          slug: string
+          status?: string
+          subscription_ends_at: string
+          updated_at?: string
+        }
+        Update: {
+          school_id?: string
+          slug?: string
+          status?: string
+          subscription_ends_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_subscriptions_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: true
             referencedRelation: "schools"
             referencedColumns: ["id"]
           },
@@ -860,6 +907,7 @@ export type Database = {
         }
         Returns: number
       }
+      is_super_admin: { Args: never; Returns: boolean }
       list_sync_devices: {
         Args: { _school: string }
         Returns: {
@@ -881,6 +929,10 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      manage_school_subscription: {
+        Args: { _action: string; _school: string }
+        Returns: undefined
+      }
       member_role: {
         Args: { _school: string }
         Returns: Database["public"]["Enums"]["school_role"]
@@ -888,6 +940,17 @@ export type Database = {
       promote_students: {
         Args: { _from: string; _school: string; _to: string }
         Returns: number
+      }
+      provision_managed_school: {
+        Args: {
+          _admin: string
+          _currency: string
+          _ends: string
+          _name: string
+          _slug: string
+          _username: string
+        }
+        Returns: string
       }
       request_membership: {
         Args: {
@@ -900,6 +963,17 @@ export type Database = {
       save_student_arrears: {
         Args: { _items: Json; _student: string }
         Returns: undefined
+      }
+      school_gateway: {
+        Args: { _slug: string }
+        Returns: {
+          code: string
+          name: string
+        }[]
+      }
+      school_subscription_active: {
+        Args: { _school: string }
+        Returns: boolean
       }
       set_sync_device_status: {
         Args: { _device: string; _school: string; _status: string }

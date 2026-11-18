@@ -1,4 +1,10 @@
 # Phase 1
+# Super administrator
+- [ ] Owner account and private school directory
+- [ ] Owner-managed registration, activation, extensions, school gateways
+- [ ] Enforce school subscriptions online and offline; seven-day warnings
+- [ ] Verify permissions and management flow
+
 - [ ] Username login and secure initial administrator account
 - [ ] Administrator-managed staff usernames/passwords and read-only Headmaster
 - [ ] School profile, term/year and account settings
