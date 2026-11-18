@@ -4,13 +4,13 @@ import type { Database } from '@/integrations/supabase/types';
 import type { ReceiptData } from './pdf';
 import { readOfflineAccess } from './offline-cache';
 import { ROLE_PERMS } from './constants';
-import { loadCashEntries } from './finance-data';
+import { loadCashEntries, type CashData } from './finance-data';
 
 type Student = Database['public']['Tables']['students']['Row'];
 type Fee = Database['public']['Tables']['fee_types']['Row'];
 type Balance = Database['public']['Functions']['debtors_by_fee']['Returns'][number];
 export type SavedReceipt = Database['public']['Tables']['payment_receipts']['Row'] & { students: { first_name: string; last_name: string; reg_number: string; grade: string } | null; payment_allocations: { amount: number; fee_types: { name: string } | null }[] };
-export type CollectionPack = { key: string; userId: string; schoolId: string; expiresAt: number; savedAt?: number; students: Student[]; fees: Fee[]; balances: Balance[]; arrears?: { student_id: string; fee_type_id: string; amount: number }[]; receipts?: SavedReceipt[]; cashData?: Awaited<ReturnType<typeof loadCashEntries>>; terms?: Database['public']['Tables']['school_terms']['Row'][]; syncedReferences?: string[] };
+export type CollectionPack = { key: string; userId: string; schoolId: string; expiresAt: number; savedAt?: number; students: Student[]; fees: Fee[]; balances: Balance[]; arrears?: { student_id: string; fee_type_id: string; amount: number }[]; receipts?: SavedReceipt[]; cashData?: CashData; terms?: Database['public']['Tables']['school_terms']['Row'][]; syncedReferences?: string[] };
 export type QueuedPayment = { id: string; userId: string; schoolId: string; studentId: string; receipt: ReceiptData; items: { fee_type_id: string; amount: number }[]; status: 'pending' | 'synced'; error?: string; officialNumber?: string };
 class CollectionDatabase extends Dexie {
   declare packs: Table<CollectionPack, string>;
@@ -20,7 +20,7 @@ class CollectionDatabase extends Dexie {
 let database: CollectionDatabase | undefined;
 function db() { return database ??= new CollectionDatabase(); }
 export function collectionChanged() { if (typeof window !== 'undefined') window.dispatchEvent(new Event('collections-changed')); }
-export async function readCollectionPack(userId: string, schoolId: string) {
+export async function readCollectionPack(userId: string, schoolId: string): Promise<CollectionPack | null> {
   const access = await readOfflineAccess(userId);
   if (!access?.memberships.some((m) => m.school_id === schoolId)) return null;
   const pack = await db().packs.get(`${userId}:${schoolId}`);
@@ -77,7 +77,7 @@ export async function prepareCollection(userId: string, schoolId: string, _expir
     if (result.error) throw result.error;
     if (result.data) syncedReferences.push(payment.id);
   }
-  await saveCollectionPack({ key: `${userId}:${schoolId}`, userId, schoolId, expiresAt: access.expiresAt, savedAt: Date.now(), students, fees: feeRows, balances, arrears, receipts: receipts?.data ?? [], cashData, terms: terms.data ?? [], syncedReferences });
+  await saveCollectionPack({ key: `${userId}:${schoolId}`, userId, schoolId, expiresAt: access.expiresAt, savedAt: Date.now(), students, fees: feeRows, balances, arrears, receipts: receipts?.data ?? [], ...(cashData ? { cashData } : {}), terms: terms.data ?? [], syncedReferences });
 }
 export function applyPending(balances: Balance[], payments: QueuedPayment[], studentId: string) {
   return balances.filter((b) => b.student_id === studentId).map((b) => {

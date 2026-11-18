@@ -18,3 +18,4 @@
 - Debt RPCs share student_balances as the fee ledger; enrolment and arrears edits use atomic audited RPCs so overall totals cannot diverge from fee totals.
 - App-shell caching uses vite-plugin-pwa generateSW and a single preview-safe registrar; never cache auth or data API responses in the service worker.
 - Collection synchronization locks are scoped by user and school; distinct workspaces must never reuse another workspace's in-flight task.
+- Saved cash data uses an explicit CashData contract rather than inferring the loader return type, preventing circular inference between finance loading and offline packs.

@@ -1,8 +1,15 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { CashEntry } from "@/lib/cashbook";
+import type { Database } from '@/integrations/supabase/types';
+
+export type CashData = {
+  entries: CashEntry[];
+  allocations: { date: string; amount: number; fee: string; account: string }[];
+  expenses: Database['public']['Tables']['expenses']['Row'][];
+};
 
 /** Loads non-voided receipts (with allocations) and expenses for a date range as cash entries. */
-export async function loadCashEntries(schoolId: string, from: string, to: string) {
+export async function loadCashEntries(schoolId: string, from: string, to: string): Promise<CashData> {
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
     const { readOfflineAccess } = await import('./offline-cache');
     const { readCollectionPack } = await import('./offline-payments');

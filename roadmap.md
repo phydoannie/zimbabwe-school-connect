@@ -7,7 +7,7 @@
 # Android device pairing
 - [x] Device pairing approval page (built in this app's backend; Android must call /api/public/device-pair)
 # Offline PWA
-- [ ] Current build: seven-day offline reopening, full student/debt download, offline filtering and durable cash receipt queue
+- [x] Current build: seven-day offline reopening, full student/debt download, offline filtering and durable cash receipt queue (27 tests passed; fresh signed-in offline reopening verified; installed-phone cold launch awaits publication)
 - [x] Phase 1: installation setup, per-user saved views, offline access expiry, connection indicator and signed-in preview verification
 - [ ] Phase 1 published verification: generated worker, Android installation and cold offline reopening (requires publishing these changes)
 - [ ] Phase 2: complete indexed school records, student/fee/expense queue and conflict-safe synchronization

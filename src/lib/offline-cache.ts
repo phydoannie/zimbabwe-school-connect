@@ -23,7 +23,7 @@ const LAST_USER = 'schoolsys.offlineUser';
 export async function saveOfflineAccess(user: Pick<User, 'id' | 'email'>, memberships: Membership[], now = Date.now()) {
   const active = memberships.filter((m) => m.status === 'active' && m.schools);
   if (!active.length) throw new Error('No active school access');
-  const access: Access = { userId: user.id, user: { id: user.id, email: user.email }, memberships: active, verifiedAt: now, expiresAt: now + OFFLINE_ACCESS_MS };
+  const access: Access = { userId: user.id, user: { id: user.id, ...(user.email !== undefined ? { email: user.email } : {}) }, memberships: active, verifiedAt: now, expiresAt: now + OFFLINE_ACCESS_MS };
   await db().access.put(access);
   if (typeof window !== 'undefined') localStorage.setItem(LAST_USER, user.id);
   return access;
