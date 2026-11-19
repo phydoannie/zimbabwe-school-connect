@@ -1,6 +1,7 @@
 # Phase 1
 # Super administrator
 - [ ] Owner account and private school directory
+- [x] Provision owner with the latest supplied password after rejected weak passwords
 - [ ] Owner-managed registration, activation, extensions, school gateways
 - [ ] Enforce school subscriptions online and offline; seven-day warnings
 - [ ] Verify permissions and management flow

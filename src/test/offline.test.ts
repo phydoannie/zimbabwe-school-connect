@@ -12,7 +12,7 @@ describe('offline school safety', () => {
   });
   it('restores saved views only to the same user before access expires', async () => {
     const client = new QueryClient();
-    await saveOfflineAccess({ id: "user-a" }, [{ school_id: "school-a", status: "active", role: "bursar", full_name: null, schools: { id: "school-a" } } as any]);
+    await saveOfflineAccess({ id: "user-a" }, [{ school_id: "school-a", status: "active", role: "bursar", full_name: null, subscription: { school_id: 'test-school', slug: 'test-school', status: 'active', subscription_ends_at: new Date(Date.now() + 30 * 86400000).toISOString() }, schools: { id: "school-a" } } as any]);
     client.setQueryData(['memberships', 'user-a'], [{ school_id: 'school-a', status: 'active' }]);
     client.setQueryData(['students', 'school-a'], [{ id: 'student-1' }]);
     client.setQueryData(['students', 'school-b'], [{ id: 'student-2' }]);
@@ -41,13 +41,13 @@ describe('PWA preview safety', () => {
 describe('seven-day offline access', () => {
   it('survives token expiry and app reopening for seven days, not beyond', async () => {
     const now = Date.now();
-    await saveOfflineAccess({ id: 'weekly-user' }, [{ school_id: 'weekly-school', status: 'active', role: 'bursar', full_name: null, schools: { id: 'weekly-school' } } as any], now);
+    await saveOfflineAccess({ id: 'weekly-user' }, [{ school_id: 'weekly-school', status: 'active', role: 'bursar', full_name: null, subscription: { school_id: 'test-school', slug: 'test-school', status: 'active', subscription_ends_at: new Date(Date.now() + 30 * 86400000).toISOString() }, schools: { id: 'weekly-school' } } as any], now);
     expect((await readOfflineAccess('weekly-user', now + 6 * 86400000))?.userId).toBe('weekly-user');
     expect(await readOfflineAccess('weekly-user', now + 7 * 86400000)).toBeNull();
     expect(await readOfflineAccess('weekly-user', now - 1)).toBeNull();
   });
   it('explicit sign-out removes offline access without revealing another user', async () => {
-    await saveOfflineAccess({ id: 'logout-user' }, [{ school_id: 'school-a', status: 'active', role: 'bursar', full_name: null, schools: { id: 'school-a' } } as any]);
+    await saveOfflineAccess({ id: 'logout-user' }, [{ school_id: 'school-a', status: 'active', role: 'bursar', full_name: null, subscription: { school_id: 'test-school', slug: 'test-school', status: 'active', subscription_ends_at: new Date(Date.now() + 30 * 86400000).toISOString() }, schools: { id: 'school-a' } } as any]);
     await clearOfflineAccess('logout-user');
     expect(await readOfflineAccess('logout-user')).toBeNull();
     expect(await readOfflineAccess('unknown-user')).toBeNull();

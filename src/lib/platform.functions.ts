@@ -3,6 +3,18 @@ import { z } from 'zod';
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
 import { normalizeUsername, usernameEmail } from './accounts';
 
+export const publicSchoolGateway = createServerFn({ method: 'GET' })
+  .inputValidator((input: unknown) => z.object({ slug: z.string().max(80) }).parse(input))
+  .handler(async ({ data }) => {
+    const { createClient } = await import('@supabase/supabase-js');
+    const key = process.env['SUPABASE_PUBLISHABLE_KEY']!;
+    const client = createClient(process.env['SUPABASE_URL']!, key, { auth: { persistSession: false, autoRefreshToken: false }, global: { fetch: (input, init) => { const headers = new Headers(init?.headers); if (key.startsWith('sb_')) headers.delete('Authorization'); headers.set('apikey', key); return fetch(input, { ...init, headers }); } } });
+    const result = await client.rpc('school_gateway', { _slug: data.slug });
+    if (result.error) throw new Error('School link could not be loaded.');
+    const school = result.data?.[0] as { name: string; code: string } | undefined;
+    return school ?? null;
+  });
+
 export const platformDirectory = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
   const check = await context.supabase.rpc('is_super_admin');
   if (check.error || !check.data) throw new Error('Only the platform owner can open this page.');

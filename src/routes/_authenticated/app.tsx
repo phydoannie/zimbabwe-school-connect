@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Navigate, Outlet, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   LayoutDashboard, Users, Wallet, Receipt, AlertTriangle, Tags, TrendingDown, CalendarCheck, BarChart3, BookOpen, Smartphone, Settings, LogOut, Menu,
@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { Button } from '@/components/ui/button';
 import { clearOfflineAccess } from '@/lib/offline-cache';
 import { OfflineStatus } from '@/components/offline-status';
+import { subscriptionAllowsAccess, subscriptionState } from '@/lib/subscriptions';
 
 export const Route = createFileRoute("/_authenticated/app")({
   component: AppLayout,
@@ -36,8 +37,10 @@ function AppLayout() {
   const ctx = useSchool();
   const [open, setOpen] = useState(false);
   const [, setOnline] = useState(true);
+  const [, setClock] = useState(0);
   const qc = useQueryClient();
   const nav = useNavigate();
+  useEffect(() => { const timer = setInterval(() => setClock(c => c + 1), 30000); return () => clearInterval(timer); }, []);
 
   if (ctx.loading) return <div className="p-10 text-muted-foreground">Loading…</div>;
   if (!ctx.school) return <Navigate to="/onboarding" />;
@@ -101,13 +104,14 @@ function AppLayout() {
       </Sheet>
       <div className="min-w-0 flex-1">
         <OfflineStatus userId={ctx.userId} schoolId={ctx.school.id} canCollect={ctx.can("finance")} onConnectionChange={setOnline} />
+        {subscriptionState(ctx.subscription) === 'expiring' && <div role="alert" className="border-b border-warning bg-warning/10 px-5 py-3 text-sm">Your school subscription expires on {new Date(ctx.subscription?.subscription_ends_at ?? '').toLocaleDateString('en-GB')}. Contact the SchoolSys administrator to renew.</div>}
         <header className="sticky top-0 z-20 flex items-center gap-3 border-b bg-card/90 px-4 py-3 backdrop-blur lg:hidden">
           <Button variant="ghost" size="icon" onClick={() => setOpen(true)} aria-label="Open menu"><Menu className="h-5 w-5" /></Button>
           <div className="truncate font-display font-semibold">{ctx.school.name}</div>
         </header>
         <main className={cn("mx-auto max-w-6xl p-4 md:p-8")}>
           <div className="min-w-0">
-            <Outlet />
+            {subscriptionAllowsAccess(ctx.subscription) ? <Outlet /> : <section role="alert" className="py-10"><h1 className="text-2xl font-bold">School access {subscriptionState(ctx.subscription)}</h1><p className="mt-3 text-muted-foreground">Contact the SchoolSys administrator to renew or activate this school.</p></section>}
           </div>
         </main>
       </div>

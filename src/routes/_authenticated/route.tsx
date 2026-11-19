@@ -23,6 +23,7 @@ export const Route = createFileRoute("/_authenticated")({
     context.queryClient.setQueryData(['memberships', data.user.id], verified);
     if (verified.some((m) => m.status === 'active' && m.schools && m.subscription?.status === 'active' && Date.parse(m.subscription.subscription_ends_at) > Date.now())) await saveOfflineAccess(data.user, verified);
     await restoreOfflineViews(context.queryClient, data.user.id).catch(() => null);
+    context.queryClient.setQueryData(['memberships', data.user.id], verified);
     return { user: data.user };
   },
   component: Layout,

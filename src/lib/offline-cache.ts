@@ -33,7 +33,9 @@ export async function readOfflineAccess(userId?: string, now = Date.now()) {
   const id = userId ?? (typeof window !== 'undefined' ? localStorage.getItem(LAST_USER) : null);
   if (!id) return null;
   const access = await db().access.get(id);
-  return access && offlineAccessValid(access.verifiedAt, access.expiresAt, now) ? access : null;
+  if (!access || !offlineAccessValid(access.verifiedAt, access.expiresAt, now)) return null;
+  const memberships = access.memberships.filter(m => subscriptionAllowsAccess(m.subscription, now));
+  return memberships.length ? { ...access, memberships } : null;
 }
 export async function clearOfflineAccess(userId: string) {
   await db().transaction('rw', db().access, db().snapshots, async () => {
@@ -61,8 +63,8 @@ export async function saveOfflineViews(client: QueryClient, userId: string, _ses
 export async function restoreOfflineViews(client: QueryClient, userId: string, now = Date.now()) {
   const access = await readOfflineAccess(userId, now);
   if (!access) return null;
-  client.setQueryData(['memberships', userId], access.memberships);
   const snapshot = await db().snapshots.get(userId);
   if (snapshot && snapshot.expiresAt > now) hydrate(client, snapshot.state);
+  client.setQueryData(['memberships', userId], access.memberships);
   return snapshot?.savedAt ?? access.verifiedAt;
 }

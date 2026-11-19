@@ -13,30 +13,30 @@ const payment = (schoolId: string): QueuedPayment => ({ id: crypto.randomUUID(),
 beforeEach(async () => { await clearOfflineAccess('user-a'); auth.user = 'user-a'; auth.expiry = Math.floor(Date.now() / 1000) + 3600; });
 describe('offline cash collection rules', () => {
   it('accepts a $5 partial cash payment and keeps it isolated to its school and user', async () => {
-    const school = crypto.randomUUID(); await saveOfflineAccess({ id: 'user-a' }, [{ school_id: school, role: 'bursar', status: 'active', full_name: null, schools: { id: school } } as any]); await saveCollectionPack(pack(school)); const p = payment(school); await queuePayment(p);
+    const school = crypto.randomUUID(); await saveOfflineAccess({ id: 'user-a' }, [{ school_id: school, role: 'bursar', status: 'active', full_name: null, subscription: { school_id: 'test-school', slug: 'test-school', status: 'active', subscription_ends_at: new Date(Date.now() + 30 * 86400000).toISOString() }, schools: { id: school } } as any]); await saveCollectionPack(pack(school)); const p = payment(school); await queuePayment(p);
     expect((await listPayments('user-a', school))[0]?.receipt.total).toBe(5);
     expect(await listPayments('user-b', school)).toEqual([]);
     expect(await listPayments('user-a', 'different-school')).toEqual([]);
   });
   it('does not overwrite or duplicate an immutable receipt reference', async () => {
-    const school = crypto.randomUUID(); await saveOfflineAccess({ id: 'user-a' }, [{ school_id: school, role: 'bursar', status: 'active', full_name: null, schools: { id: school } } as any]); await saveCollectionPack(pack(school)); const p = payment(school); await queuePayment(p);
+    const school = crypto.randomUUID(); await saveOfflineAccess({ id: 'user-a' }, [{ school_id: school, role: 'bursar', status: 'active', full_name: null, subscription: { school_id: 'test-school', slug: 'test-school', status: 'active', subscription_ends_at: new Date(Date.now() + 30 * 86400000).toISOString() }, schools: { id: school } } as any]); await saveCollectionPack(pack(school)); const p = payment(school); await queuePayment(p);
     await expect(queuePayment(p)).rejects.toThrow(); expect(await listPayments('user-a', school)).toHaveLength(1);
   });
   it('refuses non-cash payments offline', async () => {
-    const school = crypto.randomUUID(); await saveOfflineAccess({ id: 'user-a' }, [{ school_id: school, role: 'bursar', status: 'active', full_name: null, schools: { id: school } } as any]); await saveCollectionPack(pack(school)); const p = payment(school); p.receipt.method = 'EcoCash';
+    const school = crypto.randomUUID(); await saveOfflineAccess({ id: 'user-a' }, [{ school_id: school, role: 'bursar', status: 'active', full_name: null, subscription: { school_id: 'test-school', slug: 'test-school', status: 'active', subscription_ends_at: new Date(Date.now() + 30 * 86400000).toISOString() }, schools: { id: school } } as any]); await saveCollectionPack(pack(school)); const p = payment(school); p.receipt.method = 'EcoCash';
     await expect(queuePayment(p)).rejects.toThrow('Choose cash');
   });
   it('accepts cash after token expiry within verified seven-day offline access', async () => {
-    const school = crypto.randomUUID(); await saveOfflineAccess({ id: 'user-a' }, [{ school_id: school, role: 'bursar', status: 'active', full_name: null, schools: { id: school } } as any]); await saveCollectionPack(pack(school)); auth.expiry = 1;
+    const school = crypto.randomUUID(); await saveOfflineAccess({ id: 'user-a' }, [{ school_id: school, role: 'bursar', status: 'active', full_name: null, subscription: { school_id: 'test-school', slug: 'test-school', status: 'active', subscription_ends_at: new Date(Date.now() + 30 * 86400000).toISOString() }, schools: { id: school } } as any]); await saveCollectionPack(pack(school)); auth.expiry = 1;
     await queuePayment(payment(school));
     expect(await listPayments('user-a', school)).toHaveLength(1);
   });
   it('refuses expired collection records', async () => {
-    const school = crypto.randomUUID(); await saveOfflineAccess({ id: 'user-a' }, [{ school_id: school, role: 'bursar', status: 'active', full_name: null, schools: { id: school } } as any]); await saveCollectionPack({ ...pack(school), expiresAt: 1 });
+    const school = crypto.randomUUID(); await saveOfflineAccess({ id: 'user-a' }, [{ school_id: school, role: 'bursar', status: 'active', full_name: null, subscription: { school_id: 'test-school', slug: 'test-school', status: 'active', subscription_ends_at: new Date(Date.now() + 30 * 86400000).toISOString() }, schools: { id: school } } as any]); await saveCollectionPack({ ...pack(school), expiresAt: 1 });
     expect(await readCollectionPack('user-a', school)).toBeNull(); await expect(queuePayment(payment(school))).rejects.toThrow('Reconnect');
   });
   it('preserves a pending receipt when synchronization fails', async () => {
-    const school = crypto.randomUUID(); await saveOfflineAccess({ id: 'user-a' }, [{ school_id: school, role: 'bursar', status: 'active', full_name: null, schools: { id: school } } as any]); await saveCollectionPack(pack(school)); await queuePayment(payment(school));
+    const school = crypto.randomUUID(); await saveOfflineAccess({ id: 'user-a' }, [{ school_id: school, role: 'bursar', status: 'active', full_name: null, subscription: { school_id: 'test-school', slug: 'test-school', status: 'active', subscription_ends_at: new Date(Date.now() + 30 * 86400000).toISOString() }, schools: { id: school } } as any]); await saveCollectionPack(pack(school)); await queuePayment(payment(school));
     await expect(syncPayments('user-a', school)).rejects.toThrow('Connection interrupted');
     expect((await listPayments('user-a', school))[0]?.status).toBe('pending');
   });
@@ -48,7 +48,7 @@ describe('offline cash collection rules', () => {
 });
 it('denies offline collection to the read-only Headmaster', async () => {
   const school = crypto.randomUUID();
-  await saveOfflineAccess({ id: 'user-a' }, [{ school_id: school, role: 'headmaster', status: 'active', full_name: null, schools: { id: school } } as any]);
+  await saveOfflineAccess({ id: 'user-a' }, [{ school_id: school, role: 'headmaster', status: 'active', full_name: null, subscription: { school_id: 'test-school', slug: 'test-school', status: 'active', subscription_ends_at: new Date(Date.now() + 30 * 86400000).toISOString() }, schools: { id: school } } as any]);
   await saveCollectionPack(pack(school));
   await expect(queuePayment(payment(school))).rejects.toThrow('Sign in again');
 });

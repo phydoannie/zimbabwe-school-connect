@@ -16,6 +16,8 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
+import { Route as AuthenticatedSuperAdminRouteImport } from './routes/_authenticated/super-admin'
+import { Route as SSchoolRouteImport } from './routes/s.$school'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as AuthenticatedAppAttendanceRouteImport } from './routes/_authenticated/app.attendance'
 import { Route as AuthenticatedAppCashbookRouteImport } from './routes/_authenticated/app.cashbook'
@@ -63,6 +65,16 @@ const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSuperAdminRoute = AuthenticatedSuperAdminRouteImport.update({
+  id: '/super-admin',
+  path: '/super-admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const SSchoolRoute = SSchoolRouteImport.update({
+  id: '/s/$school',
+  path: '/s/$school',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   id: '/',
@@ -143,6 +155,8 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/super-admin': typeof AuthenticatedSuperAdminRoute
+  '/s/$school': typeof SSchoolRoute
   '/app/attendance': typeof AuthenticatedAppAttendanceRoute
   '/app/cashbook': typeof AuthenticatedAppCashbookRoute
   '/app/collect': typeof AuthenticatedAppCollectRoute
@@ -163,6 +177,8 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/super-admin': typeof AuthenticatedSuperAdminRoute
+  '/s/$school': typeof SSchoolRoute
   '/app/attendance': typeof AuthenticatedAppAttendanceRoute
   '/app/cashbook': typeof AuthenticatedAppCashbookRoute
   '/app/collect': typeof AuthenticatedAppCollectRoute
@@ -186,6 +202,8 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
+  '/_authenticated/super-admin': typeof AuthenticatedSuperAdminRoute
+  '/s/$school': typeof SSchoolRoute
   '/_authenticated/app/attendance': typeof AuthenticatedAppAttendanceRoute
   '/_authenticated/app/cashbook': typeof AuthenticatedAppCashbookRoute
   '/_authenticated/app/collect': typeof AuthenticatedAppCollectRoute
@@ -209,6 +227,8 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/app'
     | '/onboarding'
+    | '/super-admin'
+    | '/s/$school'
     | '/app/attendance'
     | '/app/cashbook'
     | '/app/collect'
@@ -229,6 +249,8 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/onboarding'
+    | '/super-admin'
+    | '/s/$school'
     | '/app/attendance'
     | '/app/cashbook'
     | '/app/collect'
@@ -251,6 +273,8 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_authenticated/app'
     | '/_authenticated/onboarding'
+    | '/_authenticated/super-admin'
+    | '/s/$school'
     | '/_authenticated/app/attendance'
     | '/_authenticated/app/cashbook'
     | '/_authenticated/app/collect'
@@ -272,6 +296,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  SSchoolRoute: typeof SSchoolRoute
   ApiPublicDevicePairRoute: typeof ApiPublicDevicePairRoute
 }
 
@@ -325,6 +350,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/onboarding'
       preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/super-admin': {
+      id: '/_authenticated/super-admin'
+      path: '/super-admin'
+      fullPath: '/super-admin'
+      preLoaderRoute: typeof AuthenticatedSuperAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/s/$school': {
+      id: '/s/$school'
+      path: '/s/$school'
+      fullPath: '/s/$school'
+      preLoaderRoute: typeof SSchoolRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/app/': {
       id: '/_authenticated/app/'
@@ -456,11 +495,13 @@ const AuthenticatedAppRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppRoute: typeof AuthenticatedAppRouteWithChildren
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
+  AuthenticatedSuperAdminRoute: typeof AuthenticatedSuperAdminRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppRoute: AuthenticatedAppRouteWithChildren,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
+  AuthenticatedSuperAdminRoute: AuthenticatedSuperAdminRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -472,6 +513,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  SSchoolRoute: SSchoolRoute,
   ApiPublicDevicePairRoute: ApiPublicDevicePairRoute,
 }
 export const routeTree = rootRouteImport

@@ -21,7 +21,9 @@ export function OfflineStatus({ userId, schoolId, canCollect, onConnectionChange
     if (error || data.user?.id !== userId) throw new Error('Sign in again to sync');
     const result = await supabase.from('school_members').select('school_id, role, status, full_name, schools(*)').eq('user_id', userId);
     if (result.error) throw result.error;
-    const memberships: Membership[] = result.data ?? [];
+    const subscriptions = await supabase.from('school_subscriptions').select('*');
+    if (subscriptions.error) throw subscriptions.error;
+    const memberships: Membership[] = (result.data ?? []).map(m => ({ ...m, subscription: subscriptions.data.find(s => s.school_id === m.school_id) ?? null }));
     await saveOfflineAccess(data.user, memberships);
     client.setQueryData(['memberships', userId], memberships);
   }

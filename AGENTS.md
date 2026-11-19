@@ -19,3 +19,6 @@
 - App-shell caching uses vite-plugin-pwa generateSW and a single preview-safe registrar; never cache auth or data API responses in the service worker.
 - Collection synchronization locks are scoped by user and school; distinct workspaces must never reuse another workspace's in-flight task.
 - Saved cash data uses an explicit CashData contract rather than inferring the loader return type, preventing circular inference between finance loading and offline packs.
+- Platform roles and school subscriptions are separate protected tables; management handlers verify the caller's platform role before privileged access, while member_role gates school data by the individual subscription.
+- School provisioning creates Auth credentials followed by an atomic school/subscription/membership RPC, deleting the new Auth account if the database transaction fails.
+- Offline membership snapshots include school subscriptions and deny access after their expiry; remote suspension takes effect at the next online verification, not instantly on disconnected devices.
