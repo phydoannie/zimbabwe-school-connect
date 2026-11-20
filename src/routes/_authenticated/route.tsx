@@ -6,13 +6,20 @@ import { readOfflineAccess, restoreOfflineViews, saveOfflineAccess } from '@/lib
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async ({ context }) => {
-    if (!navigator.onLine) {
+    const offline = async () => {
       const access = await readOfflineAccess().catch(() => null);
       if (!access) throw redirect({ to: '/auth' });
-      await restoreOfflineViews(context.queryClient, access.userId);
+      await restoreOfflineViews(context.queryClient, access.userId).catch(() => null);
       return { user: access.user };
-    }
-    const { data } = await supabase.auth.getUser();
+    };
+    if (!navigator.onLine) return offline();
+    // Weak rural networks: fall back to the saved 7-day device access instead of forcing sign-in.
+    const online = await Promise.race([
+      supabase.auth.getUser().then((r) => (r.error && !r.data.user && /fetch|network|timeout/i.test(r.error.message) ? null : r)),
+      new Promise<null>((res) => setTimeout(() => res(null), 5000)),
+    ]).catch(() => null);
+    if (!online) return offline();
+    const { data } = online;
     if (!data.user) throw redirect({ to: "/auth" });
     const result = await supabase.from('school_members').select('school_id, role, status, full_name, schools(*)').eq('user_id', data.user.id);
     if (result.error) throw result.error;

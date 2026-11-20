@@ -1,4 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { readOfflineAccess } from "@/lib/offline-cache";
 import { Button } from "@/components/ui/button";
 import { Receipt, Users, Wallet, CalendarCheck, ShieldCheck, Smartphone } from "lucide-react";
 
@@ -26,6 +28,8 @@ const features = [
 ];
 
 function Index() {
+  const nav = useNavigate();
+  useEffect(() => { void readOfflineAccess().then(a => { if (a) void nav({ to: '/app' }); }).catch(() => null); }, [nav]);
   return (
     <div className="min-h-screen">
       <div className="zim-stripe h-1.5" />
