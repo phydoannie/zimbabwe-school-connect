@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useSchoolCurrencies } from "@/components/currency-settings";
+import { toBase } from "@/lib/currency";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,8 +30,10 @@ function Collect() {
   const [amounts, setAmounts] = useState<Record<string, string>>({});
   const [method, setMethod] = useState<string>(PAYMENT_METHODS[0] ?? "Cash");
   const [reference, setReference] = useState("");
-  const [notes, setNotes] = useState("");
+  const [notesText, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
+  const [payCur, setPayCur] = useState("");
+  const currencies = useSchoolCurrencies(school.id);
 
   const [online, setOnline] = useState(true);
   const [pack, setPack] = useState<CollectionPack | null>(null);
@@ -65,7 +69,10 @@ function Collect() {
   const count = online ? feeCount.data : pack?.fees.filter((f) => f.active && f.year === school.current_year && f.term === school.current_term).length;
   if (!can("finance")) return <p>You don't have permission to collect fees.</p>;
 
-  const items = Object.entries(amounts).map(([fee_type_id, a]) => ({ fee_type_id, amount: Number(a) })).filter((i) => i.amount > 0);
+  const rate = Number(currencies.data?.find((c) => c.code === payCur)?.rate ?? 1);
+  const foreign = !!payCur && payCur !== school.currency && rate > 0;
+  const items = Object.entries(amounts).map(([fee_type_id, a]) => ({ fee_type_id, amount: foreign ? toBase(Number(a), rate) : Number(a) })).filter((i) => i.amount > 0);
+  const tendered = Object.values(amounts).reduce((n, a) => n + (Number(a) || 0), 0);
   const total = sumAllocations(items);
 
   async function submit() {
@@ -73,6 +80,7 @@ function Collect() {
     if (!stu || items.length === 0) { toast.error("Enter at least one amount"); return; }
     if (items.some((i) => !Number.isFinite(i.amount)) || count === 0) { toast.error("Add fee types and valid amounts first"); return; }
     setBusy(true);
+    const notes = foreign ? [notesText, `Paid ${tendered.toFixed(2)} ${payCur} @ ${rate} per ${school.currency}`].filter(Boolean).join(' · ') : notesText;
     if (!online || method.startsWith("Cash (")) {
       try {
         const id = crypto.randomUUID();
@@ -171,9 +179,10 @@ function Collect() {
             </div>
           </Card>
           <Card className="h-fit space-y-3 lg:sticky lg:top-6">
+            {(currencies.data?.length ?? 0) > 0 && <div><Label>Currency paid in</Label><select className={selectCls} value={payCur || school.currency} onChange={(e) => setPayCur(e.target.value)}><option>{school.currency}</option>{currencies.data?.map((c) => <option key={c.id}>{c.code}</option>)}</select>{foreign && <p className="mt-1 text-xs text-muted-foreground">Type amounts in {payCur}. {tendered.toFixed(2)} {payCur} = {money(total, school.currency)} at {rate} {payCur} per 1 {school.currency}.</p>}</div>}
             <div><Label>Payment method</Label><select className={selectCls} value={method} onChange={(e) => setMethod(e.target.value)}>{PAYMENT_METHODS.map((m) => <option key={m} disabled={!online && !m.startsWith("Cash (")}>{m}</option>)}</select></div>
             <div><Label>Reference (EcoCash / bank ref)</Label><Input value={reference} onChange={(e) => setReference(e.target.value)} /></div>
-            <div><Label>Notes</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
+            <div><Label>Notes</Label><Input value={notesText} onChange={(e) => setNotes(e.target.value)} /></div>
             <div className="flex items-center justify-between border-t pt-3">
               <span className="text-sm text-muted-foreground">Total</span>
               <span className="font-display text-2xl font-bold">{money(total, school.currency)}</span>

@@ -306,6 +306,38 @@ export type Database = {
         }
         Relationships: []
       }
+      school_currencies: {
+        Row: {
+          code: string
+          id: string
+          rate: number
+          school_id: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          id?: string
+          rate: number
+          school_id: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          id?: string
+          rate?: number
+          school_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_currencies_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       school_members: {
         Row: {
           created_at: string

@@ -8,7 +8,7 @@ export const PAYMENT_METHODS = [
   "Cash (USD)", "Cash (ZiG)", "EcoCash", "OneMoney", "InnBucks", "Bank transfer", "Swipe / ZIPIT",
 ];
 
-export const CURRENCIES = ["USD", "ZiG", "ZAR"];
+export const CURRENCIES = ["USD", "ZiG", "ZAR", "ZMW", "BWP", "MZN", "MWK", "NAD", "KES", "TZS", "GBP", "EUR"];
 
 export const ACCOUNTS = ["Tuition", "General Levy", "Sports Levy", "Building Fund", "Boarding", "Transport", "Exams"];
 

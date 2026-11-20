@@ -64,6 +64,13 @@
       "when": 1794988077558,
       "tag": "0008_platform_school_subscriptions",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1795193636301,
+      "tag": "0009_school_currencies",
+      "breakpoints": true
     }
   ]
 }
