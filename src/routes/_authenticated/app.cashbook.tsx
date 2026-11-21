@@ -20,22 +20,29 @@ export const Route = createFileRoute("/_authenticated/app/cashbook")({
 function CashBook() {
   const { school, can } = useCurrentSchool();
   const [from, setFrom] = useState(`${school.current_year}-01-01`); const [to, setTo] = useState("");
-  const [method, setMethod] = useState(""); const [opening, setOpening] = useState("0");
+  const [method, setMethod] = useState(""); const [fee, setFee] = useState(""); const [opening, setOpening] = useState("0");
   const { data, error, isLoading } = useQuery({ queryKey: ["cashbook", school.id, from, to], enabled: can("finance") || can("reports"), networkMode: "always", queryFn: () => loadCashEntries(school.id, from, to) });
   if (!can("reports") && !can("finance")) return <Empty>You do not have access to the cash book.</Empty>;
-  const entries = (data?.entries ?? []).filter((e) => !method || e.method === method);
+  const fees = [...new Set((data?.allocations ?? []).map((a) => a.fee))].sort();
+  const feeAccount = (data?.allocations ?? []).find((a) => a.fee === fee)?.account;
+  const base = !fee ? data?.entries ?? [] : [
+    ...(data?.allocations ?? []).filter((a) => a.fee === fee).map((a, i) => ({ id: a.id ?? `${a.date}-${i}`, date: a.date, kind: "in" as const, detail: a.detail ?? a.fee, ref: a.ref ?? "", method: a.method ?? "", account: a.account, amount: a.amount })),
+    ...(data?.entries ?? []).filter((e) => e.kind === "out" && (e.account === fee || e.account === feeAccount)),
+  ];
+  const entries = base.filter((e) => !method || e.method === method);
   const rows = buildCashBook(entries, Number(opening) || 0);
   const tin = entries.filter((e) => e.kind === "in").reduce((s, e) => s + e.amount, 0);
   const tout = entries.filter((e) => e.kind === "out").reduce((s, e) => s + e.amount, 0);
   const closing = (Number(opening) || 0) + tin - tout; const c = school.currency;
   return <>
-    <PageHeader title="Cash Book" sub={`${rows.length} entries`} action={<div className="flex gap-2 print:hidden">
+    <PageHeader title={fee ? `Cash Book — ${fee}` : "Cash Book"} sub={`${rows.length} entries`} action={<div className="flex gap-2 print:hidden">
       <Button variant="outline" onClick={() => window.print()}><Printer className="h-4 w-4" />Print</Button>
-      <Button variant="outline" disabled={!rows.length} onClick={() => downloadCsv("cash-book.csv", [["Date", "Details", "Ref", "Method", "Account", "Receipts", "Payments", "Balance"], ...rows.map((r) => [r.date, r.detail, r.ref, r.method, r.account, r.kind === "in" ? r.amount : "", r.kind === "out" ? r.amount : "", r.balance])])}><Download className="h-4 w-4" />CSV</Button></div>} />
-    <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 print:hidden">
+      <Button variant="outline" disabled={!rows.length} onClick={() => downloadCsv(fee ? `cash-book-${fee}.csv` : "cash-book.csv", [["Date", "Details", "Ref", "Method", "Account", "Receipts", "Payments", "Balance"], ...rows.map((r) => [r.date, r.detail, r.ref, r.method, r.account, r.kind === "in" ? r.amount : "", r.kind === "out" ? r.amount : "", r.balance])])}><Download className="h-4 w-4" />CSV</Button></div>} />
+    <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5 print:hidden">
       <div><Label htmlFor="cbFrom">From</Label><Input id="cbFrom" type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
       <div><Label htmlFor="cbTo">To</Label><Input id="cbTo" type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
       <div><Label htmlFor="cbMethod">Method</Label><select id="cbMethod" className={selectCls} value={method} onChange={(e) => setMethod(e.target.value)}><option value="">All methods</option>{PAYMENT_METHODS.map((m) => <option key={m}>{m}</option>)}</select></div>
+      <div><Label htmlFor="cbFee">Fee account</Label><select id="cbFee" className={selectCls} value={fee} onChange={(e) => setFee(e.target.value)}><option value="">All fees (combined)</option>{fees.map((f) => <option key={f}>{f}</option>)}</select></div>
       <div><Label htmlFor="cbOpen">Opening balance ({c})</Label><Input id="cbOpen" type="number" step="0.01" value={opening} onChange={(e) => setOpening(e.target.value)} /></div>
     </div>
     <div className="mb-5 grid gap-3 sm:grid-cols-4">

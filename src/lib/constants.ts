@@ -5,7 +5,7 @@ export const GRADES = [
 ];
 
 export const PAYMENT_METHODS = [
-  "Cash (USD)", "Cash (ZiG)", "EcoCash", "OneMoney", "InnBucks", "Bank transfer", "Swipe / ZIPIT",
+  "Cash (USD)", "Cash (ZiG)", "EcoCash", "OneMoney", "InnBucks", "Bank transfer (USD)", "Bank transfer (ZiG)", "Swipe / ZIPIT",
 ];
 
 export const CURRENCIES = ["USD", "ZiG", "ZAR", "ZMW", "BWP", "MZN", "MWK", "NAD", "KES", "TZS", "GBP", "EUR"];
