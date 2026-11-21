@@ -2,6 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { money } from "./constants";
 import type { School } from "./school-context";
+import { loadSchoolLogo } from './school-logo';
 
 export type ReceiptData = {
   receipt_number: string;
@@ -19,16 +20,23 @@ export type ReceiptData = {
   items: { name: string; amount: number; balance?: number }[];
 };
 
-export function receiptPdf(school: School, r: ReceiptData) {
+export function receiptPdf(school: School, r: ReceiptData, logo?: string | null) {
   const doc = new jsPDF({ unit: "mm", format: "a5" });
   const w = doc.internal.pageSize.getWidth();
   doc.setFillColor(28, 40, 92);
   doc.rect(0, 0, w, 28, "F");
   doc.setTextColor(255, 255, 255);
+  let titleX = 10;
+  if (logo) {
+    const image = doc.getImageProperties(logo);
+    const scale = Math.min(18 / image.width, 18 / image.height);
+    doc.addImage(logo, 'PNG', 10, 5, image.width * scale, image.height * scale);
+    titleX = 32;
+  }
   doc.setFontSize(14);
-  doc.text(doc.splitTextToSize(school.name, w - 20), 10, 11);
+  doc.text(doc.splitTextToSize(school.name, w - titleX - 10), titleX, 11);
   doc.setFontSize(8);
-  doc.text([school.address, school.phone, school.email].filter(Boolean).join("  •  "), 10, 22);
+  doc.text(doc.splitTextToSize([school.address, school.phone, school.email].filter(Boolean).join("  •  "), w - titleX - 10), titleX, 22);
   doc.setTextColor(20, 20, 40);
   doc.setFontSize(12);
   doc.text(r.pending ? "OFFLINE RECEIPT - PENDING SYNC" : "OFFICIAL RECEIPT", 10, 38);
@@ -62,4 +70,19 @@ export function receiptPdf(school: School, r: ReceiptData) {
     doc.text("VOID", w / 2, 110, { align: "center", angle: 30 });
   }
   return doc;
+}
+
+export async function outputReceipt(school: School, receipt: ReceiptData, userId: string, action: 'download' | 'print', printWindow?: Window | null) {
+  const target = action === 'print' ? printWindow ?? window.open('', '_blank') : null;
+  if (action === 'print' && !target) throw new Error('Allow pop-ups to print, or download the PDF');
+  try {
+    const logo = await loadSchoolLogo(school, userId);
+    const doc = receiptPdf(school, receipt, logo);
+    if (action === 'download') { doc.save(`${receipt.receipt_number}.pdf`); return; }
+    if (!target) return;
+    doc.autoPrint();
+    const url = URL.createObjectURL(doc.output('blob'));
+    target.location.href = url;
+    setTimeout(() => URL.revokeObjectURL(url), 300000);
+  } catch (error) { target?.close(); throw error; }
 }

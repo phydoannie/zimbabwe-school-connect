@@ -8,6 +8,7 @@ import { PageHeader, Empty, Stat, selectCls } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { overallDebts, useOfflineSchool } from "@/lib/use-offline-school";
 import { pageHead } from '@/lib/metadata';
+import { csvCell } from '@/lib/csv';
 
 export const Route = createFileRoute("/_authenticated/app/debtors")({
   head: () => pageHead('Debtors', 'Outstanding school balances by student, class and fee type.'),
@@ -48,7 +49,7 @@ function Debtors() {
 
   function csv() {
     const lines = [["Reg No", "Name", "Class", "Fee type", "Guardian phone", "Due", "Paid", "Balance"], ...rows.map((d) => [d.reg_number, d.full_name, d.grade, fee || "All fees", d.guardian_phone ?? "", d.due, d.paid, d.balance])];
-    const blob = new Blob([lines.map((l) => l.map((c) => `"${c}"`).join(",")).join("\n")], { type: "text/csv" });
+    const blob = new Blob([lines.map((l) => l.map(csvCell).join(",")).join("\n")], { type: "text/csv" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `debtors${fee ? "-" + fee : ""}.csv`; a.click();
   }
 

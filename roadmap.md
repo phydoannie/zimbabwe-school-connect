@@ -1,4 +1,9 @@
 # Phase 1
+# Current request: publishing security and school receipts
+- [ ] Resolve active publish security findings and verify protections
+- [ ] School-specific optional receipt starting numbers, safe online and offline sync
+- [ ] Immediate receipt printing and school logo file selection on PDFs
+- [ ] Test receipt settings, logo and printing flows
 # Super administrator
 - [ ] Owner account and private school directory
 - [x] Provision owner with the latest supplied password after rejected weak passwords

@@ -379,6 +379,32 @@ export type Database = {
           },
         ]
       }
+      school_receipt_settings: {
+        Row: {
+          automatic_numbering: boolean
+          next_number: number
+          school_id: string
+        }
+        Insert: {
+          automatic_numbering?: boolean
+          next_number?: number
+          school_id: string
+        }
+        Update: {
+          automatic_numbering?: boolean
+          next_number?: number
+          school_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_receipt_settings_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: true
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       school_subscriptions: {
         Row: {
           school_id: string
@@ -419,6 +445,7 @@ export type Database = {
           device_name: string | null
           id: string
           last_seen_at: string | null
+          pairing_token_hash: string | null
           platform: string
           requested_at: string
           school_id: string
@@ -431,6 +458,7 @@ export type Database = {
           device_name?: string | null
           id?: string
           last_seen_at?: string | null
+          pairing_token_hash?: string | null
           platform?: string
           requested_at?: string
           school_id: string
@@ -443,6 +471,7 @@ export type Database = {
           device_name?: string | null
           id?: string
           last_seen_at?: string | null
+          pairing_token_hash?: string | null
           platform?: string
           requested_at?: string
           school_id?: string
@@ -949,6 +978,7 @@ export type Database = {
           device_name: string | null
           id: string
           last_seen_at: string | null
+          pairing_token_hash: string | null
           platform: string
           requested_at: string
           school_id: string
@@ -991,6 +1021,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["school_role"]
         }
         Returns: string
+      }
+      save_receipt_settings: {
+        Args: { _enabled: boolean; _next: number; _school: string }
+        Returns: undefined
       }
       save_student_arrears: {
         Args: { _items: Json; _student: string }

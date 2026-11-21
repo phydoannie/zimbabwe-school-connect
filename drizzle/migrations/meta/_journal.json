@@ -78,6 +78,13 @@
       "when": 1795243944684,
       "tag": "0010_restrict_balance_functions",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1795245458719,
+      "tag": "0011_secure_school_receipt_settings",
+      "breakpoints": true
     }
   ]
 }

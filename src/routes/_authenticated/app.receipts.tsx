@@ -5,7 +5,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentSchool } from "@/lib/school-context";
 import { money } from "@/lib/constants";
-import { receiptPdf } from "@/lib/pdf";
+import { outputReceipt } from "@/lib/pdf";
+import { Printer, Download } from 'lucide-react';
 import { PageHeader, Empty } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/_authenticated/app/receipts")({
 });
 
 function Receipts() {
-  const { school, role } = useCurrentSchool();
+  const { school, role, userId } = useCurrentSchool();
   const offline = useOfflineSchool();
   const qc = useQueryClient();
   const [q, setQ] = useState("");
@@ -35,11 +36,11 @@ function Receipts() {
   });
 
   const data = offline.online ? receiptQuery.data : (offline.pack?.receipts ?? []).filter((r) => r.receipt_number.toLowerCase().includes(q.toLowerCase()));
-  function pdf(r: NonNullable<typeof data>[number]) {
-    receiptPdf(school, {
+  function pdf(r: NonNullable<typeof data>[number], action: 'download' | 'print') {
+    void outputReceipt(school, {
       ...r, total: Number(r.total), student: r.students ?? { first_name: '', last_name: '', reg_number: '', grade: '' },
       items: r.payment_allocations.map((a) => ({ name: a.fee_types?.name ?? "Fee", amount: Number(a.amount) })),
-    }).save(`${r.receipt_number}.pdf`);
+    }, userId, action).catch(error => toast.error(error instanceof Error ? error.message : 'Receipt could not be opened'));
   }
 
   async function voidIt(id: string) {
@@ -67,7 +68,8 @@ function Receipts() {
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-semibold">{money(r.total, school.currency)}</span>
-                <Button size="sm" variant="outline" onClick={() => pdf(r)}>PDF</Button>
+                <Button size="sm" variant="outline" onClick={() => pdf(r, 'print')}><Printer />Print</Button>
+                <Button size="sm" variant="outline" onClick={() => pdf(r, 'download')}><Download />PDF</Button>
                 {offline.online && !r.voided && (role === "head" || role === "bursar" || role === 'admin') && <Button size="sm" variant="ghost" onClick={() => voidIt(r.id)}>Void</Button>}
               </div>
             </div>

@@ -6,6 +6,7 @@ import { readOfflineAccess } from './offline-cache';
 import { ROLE_PERMS } from './constants';
 import { loadCashEntries, type CashData } from './finance-data';
 import { subscriptionAllowsAccess } from './subscriptions';
+import { loadSchoolLogo } from './school-logo';
 
 type Student = Database['public']['Tables']['students']['Row'];
 type Fee = Database['public']['Tables']['fee_types']['Row'];
@@ -35,6 +36,7 @@ export async function prepareCollection(userId: string, schoolId: string, _expir
   const access = await readOfflineAccess(userId);
   const membership = access?.memberships.find((m) => m.school_id === schoolId);
   if (!access || !membership) throw new Error('Sign in online before saving school records');
+  if (membership.schools?.logo_url) await loadSchoolLogo(membership.schools, userId);
   const financial = (ROLE_PERMS[membership.role] ?? []).includes('reports');
   const students: Student[] = [];
   for (let page = 0; ; page++) {
