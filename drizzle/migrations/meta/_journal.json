@@ -71,6 +71,13 @@
       "when": 1795193636301,
       "tag": "0009_school_currencies",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1795243944684,
+      "tag": "0010_restrict_balance_functions",
+      "breakpoints": true
     }
   ]
 }
