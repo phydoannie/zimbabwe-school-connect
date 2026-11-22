@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useCurrentSchool } from './school-context';
 import { applyPending, listPayments, readCollectionPack, type CollectionPack } from './offline-payments';
+import { listEntries, type OfflineEntry } from './offline-entries';
 
 export function useOfflineSchool() {
   const { userId, school } = useCurrentSchool();
   const [online, setOnline] = useState(true);
   const [pack, setPack] = useState<CollectionPack | null>(null);
   const [loading, setLoading] = useState(true);
+  const [entries, setEntries] = useState<OfflineEntry[]>([]);
   useEffect(() => {
     let disposed = false;
     const load = async () => {
@@ -14,6 +16,8 @@ export function useOfflineSchool() {
       try {
         const saved = await readCollectionPack(userId, school.id);
         const payments = await listPayments(userId, school.id);
+        const mutations = await listEntries(userId, school.id);
+        if (!disposed) setEntries(mutations);
         const pending = payments.filter((p) => !saved?.syncedReferences?.includes(p.id));
         if (!disposed) setPack(saved ? { ...saved, balances: saved.students.flatMap((s) => applyPending(saved.balances, pending, s.id)) } : null);
       } finally { if (!disposed) setLoading(false); }
@@ -24,7 +28,7 @@ export function useOfflineSchool() {
     window.addEventListener('online', changed); window.addEventListener('offline', changed); window.addEventListener('collections-changed', changed);
     return () => { disposed = true; clearInterval(timer); window.removeEventListener('online', changed); window.removeEventListener('offline', changed); window.removeEventListener('collections-changed', changed); };
   }, [userId, school.id]);
-  return { online, pack, loading };
+  return { online, pack, loading, entries };
 }
 
 export function overallDebts(balances: CollectionPack['balances']) {

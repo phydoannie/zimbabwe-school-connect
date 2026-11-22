@@ -1,5 +1,7 @@
 # Phase 1
 # Current request: publishing security and school receipts
+- [ ] Offline student enrolment with entered fee arrears and retry-safe syncing
+- [ ] Offline expenses with saved registers and retry-safe syncing
 - [ ] Resolve active publish security findings and verify protections
 - [ ] School-specific optional receipt starting numbers, safe online and offline sync
 - [ ] Immediate receipt printing and school logo file selection on PDFs

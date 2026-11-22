@@ -7,6 +7,7 @@ import { ROLE_PERMS } from './constants';
 import { loadCashEntries, type CashData } from './finance-data';
 import { subscriptionAllowsAccess } from './subscriptions';
 import { loadSchoolLogo } from './school-logo';
+import { listEntries, overlayEntries, syncEntries } from './offline-entries';
 
 type Student = Database['public']['Tables']['students']['Row'];
 type Fee = Database['public']['Tables']['fee_types']['Row'];
@@ -26,7 +27,7 @@ export async function readCollectionPack(userId: string, schoolId: string): Prom
   const access = await readOfflineAccess(userId);
   if (!access?.memberships.some((m) => m.school_id === schoolId && subscriptionAllowsAccess(m.subscription))) return null;
   const pack = await db().packs.get(`${userId}:${schoolId}`);
-  return pack && pack.expiresAt > Date.now() ? pack : null;
+  return pack && pack.expiresAt > Date.now() ? overlayEntries(pack, await listEntries(userId, schoolId)) : null;
 }
 export async function listPayments(userId: string, schoolId: string) {
   return db().payments.where('[userId+schoolId]').equals([userId, schoolId]).toArray();
@@ -105,6 +106,7 @@ export function syncPayments(userId: string, schoolId: string) {
   const task = (async () => {
     const { data } = await supabase.auth.getUser();
     if (data.user?.id !== userId) throw new Error('Sign in again to sync receipts');
+    await syncEntries(userId, schoolId);
     for (const payment of (await listPayments(userId, schoolId)).filter((p) => p.status === 'pending')) {
       try {
         const r = payment.receipt;

@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { queueEntry } from '@/lib/offline-entries';
 
 export const Route = createFileRoute("/_authenticated/app/students")({
   head: () => pageHead('Students', 'School student register, classes and guardian contact records.'),
@@ -104,7 +105,7 @@ function StudentProfile({ student, onClose }: { student: StuRow; onClose: () => 
 }
 
 function Students() {
-  const { school, can } = useCurrentSchool();
+  const { school, can, userId } = useCurrentSchool();
   const offline = useOfflineSchool();
   const qc = useQueryClient();
   const [q, setQ] = useState("");
@@ -137,24 +138,34 @@ function Students() {
     const arrears = Object.entries(opening).map(([fee_type_id, amount]) => ({ fee_type_id, amount: Number(amount || 0) }));
     if (arrears.some((i) => !Number.isFinite(i.amount) || i.amount < 0)) { toast.error("Enter valid arrears amounts"); return; }
     setSaving(true);
-    const { error } = await supabase.rpc("enrol_student", { _school: school.id, _student: {
+    const student = {
       reg_number: (f["reg_number"] ?? "").trim(), first_name: (f["first_name"] ?? "").trim(), last_name: (f["last_name"] ?? "").trim(),
       gender: f["gender"] || "", grade: f["grade"] ?? "Grade 1", class_name: f["class_name"] || "", boarding: f["boarding"] === "on",
       guardian_name: f["guardian_name"] || "", guardian_phone: f["guardian_phone"] || "",
-    }, _arrears: arrears });
-    setSaving(false);
-    if (error) { toast.error(error.code === "23505" ? "That registration number already exists" : error.message); return; }
-    toast.success("Student and arrears saved");
-    setOpen(false); setOpening({});
-    void qc.invalidateQueries();
+    };
+    try {
+      if (!offline.online) {
+        await queueEntry({ id: crypto.randomUUID(), userId, schoolId: school.id, createdAt: new Date().toISOString(), status: 'pending', kind: 'student', payload: { student, arrears } });
+      } else {
+        const result = await supabase.rpc('enrol_student', { _school: school.id, _student: student, _arrears: arrears });
+        if (result.error) throw result.error;
+      }
+      toast.success(offline.online ? 'Student and arrears saved' : 'Student and arrears saved on this device; pending sync');
+      setOpen(false); setOpening({});
+      void qc.invalidateQueries();
+    } catch (error) { toast.error(error instanceof Error ? error.message : 'Student could not be saved'); }
+    finally { setSaving(false); }
   }
 
   const localRows = (offline.pack?.students ?? []).filter((s) => (!grade || s.grade === grade) && `${s.first_name} ${s.last_name} ${s.reg_number} ${s.guardian_phone ?? ""}`.toLowerCase().includes(q.toLowerCase())).sort((a,b) => a.last_name.localeCompare(b.last_name));
   const data = offline.online ? register.data : { rows: localRows.slice(page * PAGE, (page + 1) * PAGE), count: localRows.length };
   const rows = data?.rows ?? [];
+  const enrolmentFees = offline.online ? fees.data ?? [] : offline.pack?.fees.filter(f => f.active) ?? [];
+  const pendingStudents = offline.entries.filter(e => e.kind === 'student' && e.status === 'pending');
   return (
     <>
-      <PageHeader title="Students" sub={`${data?.count ?? 0} students`} action={offline.online && can("students") && <Button onClick={() => { setOpening({}); setOpen(true); }}>Add student</Button>} />
+      <PageHeader title="Students" sub={`${data?.count ?? 0} students`} action={can("students") && <Button disabled={!offline.online && !offline.pack} onClick={() => { setOpening({}); setOpen(true); }}>Add student</Button>} />
+      {pendingStudents.length > 0 && <section className="mb-4 border-b pb-3 text-sm"><h2 className="font-semibold">Students pending sync</h2>{pendingStudents.map(e => <div key={e.id} className="py-2">{e.kind === 'student' && `${e.payload.student.first_name} ${e.payload.student.last_name} · ${e.payload.student.reg_number}`}{e.error && <p className="text-destructive">{e.error}</p>}</div>)}</section>}
       <div className="mb-4 flex flex-col gap-2 sm:flex-row">
         <Input placeholder="Search name, reg no, guardian phone…" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} className="h-10" />
         <select className={`${selectCls} sm:w-44`} value={grade} onChange={(e) => { setGrade(e.target.value); setPage(0); }}>
@@ -209,12 +220,12 @@ function Students() {
             <label className="flex items-end gap-2 pb-2 text-sm"><input type="checkbox" name="boarding" /> Boarder</label>
             <div><Label>Guardian name</Label><Input name="guardian_name" /></div>
             <div><Label>Guardian phone</Label><Input name="guardian_phone" placeholder="07…" /></div>
-            {offline.online && can("finance") && <div className="col-span-2 space-y-2 border-t pt-3">
+            {can("finance") && <div className="col-span-2 space-y-2 border-t pt-3">
               <Label>Opening arrears by fee type</Label>
-              {fees.isPending && <p className="text-sm text-muted-foreground">Loading fee types…</p>}
-              {fees.isError && <p className="text-sm text-destructive">Fee types could not load. Reconnect and try again.</p>}
-              {fees.data?.length === 0 && <p className="text-sm text-muted-foreground">No fee types configured.</p>}
-              {(fees.data ?? []).map((fee) => <div key={fee.id} className="flex items-center justify-between gap-3">
+              {offline.online && fees.isPending && <p className="text-sm text-muted-foreground">Loading fee types…</p>}
+              {offline.online && fees.isError && <p className="text-sm text-destructive">Fee types could not load. Reconnect and try again.</p>}
+              {enrolmentFees.length === 0 && <p className="text-sm text-muted-foreground">No fee types configured.</p>}
+              {enrolmentFees.map((fee) => <div key={fee.id} className="flex items-center justify-between gap-3">
                 <Label htmlFor={`opening-${fee.id}`}>{fee.name} · {fee.year}, period {fee.term}</Label>
                 <Input id={`opening-${fee.id}`} aria-label={`${fee.name} opening arrears`} className="w-28 text-right" type="number" min="0" step="0.01" value={opening[fee.id] ?? "0"} onChange={(e) => setOpening({ ...opening, [fee.id]: e.target.value })} />
               </div>)}

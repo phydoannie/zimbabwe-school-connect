@@ -7,6 +7,7 @@ import { registerOfflineApp } from '@/lib/pwa';
 import { restoreOfflineViews, saveOfflineViews, saveOfflineAccess } from '@/lib/offline-cache';
 import type { Membership } from '@/lib/school-context';
 import { listPayments, prepareCollection, readCollectionPack, syncPayments } from '@/lib/offline-payments';
+import { listEntries, syncEntries } from '@/lib/offline-entries';
 
 export function OfflineStatus({ userId, schoolId, canCollect, onConnectionChange }: { userId: string; schoolId: string; canCollect: boolean; onConnectionChange: (online: boolean) => void }) {
   const client = useQueryClient();
@@ -34,13 +35,15 @@ export function OfflineStatus({ userId, schoolId, canCollect, onConnectionChange
     async function counts() {
       const payments = await listPayments(userId, schoolId);
       const pack = await readCollectionPack(userId, schoolId);
-      if (!disposed) { setPending(payments.filter((p) => p.status === 'pending').length); setReady(!!pack); }
+      const entries = await listEntries(userId, schoolId);
+      if (!disposed) { setPending(payments.filter((p) => p.status === 'pending').length + entries.filter(e => e.status === 'pending').length); setReady(!!pack); }
     }
     async function refreshCollections() {
       if (!navigator.onLine || working) return;
       working = true;
       try {
         await verifyAccess();
+        await syncEntries(userId, schoolId);
         if (canCollect) await syncPayments(userId, schoolId);
         await prepareCollection(userId, schoolId);
         const pack = await readCollectionPack(userId, schoolId);
@@ -90,6 +93,7 @@ export function OfflineStatus({ userId, schoolId, canCollect, onConnectionChange
     setSyncing(true); setFailed(false);
     try {
       await verifyAccess();
+      await syncEntries(userId, schoolId);
       if (canCollect) {
         await syncPayments(userId, schoolId);
       }
@@ -104,7 +108,7 @@ export function OfflineStatus({ userId, schoolId, canCollect, onConnectionChange
 
   return <div role="status" className="flex flex-wrap items-center justify-between gap-2 border-b bg-muted px-4 py-2 text-xs md:px-8">
     <div className="flex items-center gap-2">{online ? <Wifi className="h-4 w-4 text-success" /> : <WifiOff className="h-4 w-4 text-warning" />}
-      <span>{!online ? (canCollect && ready ? 'OFFLINE · Cash collection available' : 'OFFLINE · Saved records') : syncing ? 'SYNCING' : failed ? 'SYNC FAILED · Retry sync' : 'ONLINE'} · {ready ? 'School records saved' : 'Saving school records…'}{pending > 0 && ` · ${pending} receipts pending`}{savedAt && ` · Saved ${new Date(savedAt).toLocaleString()}`} · Online sign-in required every 7 days</span>
+      <span>{!online ? (canCollect && ready ? 'OFFLINE · Cash collection available' : 'OFFLINE · Saved records') : syncing ? 'SYNCING' : failed ? 'SYNC FAILED · Retry sync' : 'ONLINE'} · {ready ? 'School records saved' : 'Saving school records…'}{pending > 0 && ` · ${pending} entries pending`}{savedAt && ` · Saved ${new Date(savedAt).toLocaleString()}`} · Online sign-in required every 7 days</span>
     </div>
     <Button variant="ghost" size="sm" disabled={!online || syncing} onClick={sync}><RefreshCw className={`h-3 w-3 ${syncing ? 'animate-spin' : ''}`} />Sync now</Button>
   </div>;

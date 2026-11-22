@@ -150,6 +150,44 @@ export type Database = {
           },
         ]
       }
+      offline_entry_receipts: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          payload: Json
+          record_id: string
+          school_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          kind: string
+          payload: Json
+          record_id: string
+          school_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          payload?: Json
+          record_id?: string
+          school_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offline_entry_receipts_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_allocations: {
         Row: {
           amount: number
@@ -1068,6 +1106,15 @@ export type Database = {
           _student: string
           _term: number
           _year: number
+        }
+        Returns: string
+      }
+      sync_offline_entry: {
+        Args: {
+          _kind: string
+          _payload: Json
+          _reference: string
+          _school: string
         }
         Returns: string
       }

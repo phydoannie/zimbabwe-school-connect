@@ -7,7 +7,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentSchool } from "@/lib/school-context";
 import { PAYMENT_METHODS, money, sumAllocations } from "@/lib/constants";
-import { receiptPdf } from "@/lib/pdf";
+import { outputReceipt, type ReceiptData } from "@/lib/pdf";
+import { Printer, Download } from 'lucide-react';
 import { pageHead } from '@/lib/metadata';
 import { PageHeader, Card, selectCls } from "@/components/page";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ function Collect() {
   const [online, setOnline] = useState(true);
   const [pack, setPack] = useState<CollectionPack | null>(null);
   const [queued, setQueued] = useState<QueuedPayment[]>([]);
+  const [lastReceipt, setLastReceipt] = useState<ReceiptData | null>(null);
   useEffect(() => {
     let disposed = false;
     const load = async () => {
@@ -93,7 +95,7 @@ function Collect() {
         await queuePayment({ id, userId, schoolId: school.id, studentId: stu.id, receipt, items, status: 'pending' });
         toast.success("Cash receipt saved on this device");
         setAmounts({}); setReference(""); setNotes(""); setStu(null); setQ("");
-        try { receiptPdf(school, receipt).save(`${receipt.receipt_number}.pdf`); } catch { toast.error("Receipt saved; download it below"); }
+        setLastReceipt(receipt);
         if (online) { try { await syncPayments(userId, school.id); void qc.invalidateQueries(); } catch { toast.error("Receipt saved locally; sync will retry"); } }
       } catch (error) { toast.error(error instanceof Error ? error.message : "Could not save receipt"); }
       finally { setBusy(false); collectionChanged(); }
@@ -108,13 +110,13 @@ function Collect() {
     const { data: r } = await supabase.from("payment_receipts").select("*").eq("id", rid as string).single();
     const newBal = (await supabase.rpc("student_balances", { _student: stu.id })).data ?? [];
     if (r) {
-      receiptPdf(school, {
+      setLastReceipt({
         ...r, total: Number(r.total), student: stu,
         items: items.map((i) => {
           const b = newBal.find((x) => x.fee_type_id === i.fee_type_id);
           return { name: b?.name ?? "Fee", amount: i.amount, ...(b ? { balance: Number(b.balance) } : {}) };
         }),
-      }).save(`${r.receipt_number}.pdf`);
+      });
     }
     toast.success(`Receipt ${r?.receipt_number} issued for ${money(total, school.currency)}`);
     setAmounts({}); setReference(""); setNotes(""); setStu(null); setQ("");
@@ -124,6 +126,14 @@ function Collect() {
   return (
     <>
       <PageHeader title="Collect fees" sub={`Term ${school.current_term}, ${school.current_year}`} />
+      {lastReceipt && <section className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b pb-4">
+        <div><h2 className="font-semibold">Receipt saved</h2><p className="text-sm text-muted-foreground">{lastReceipt.student.first_name} {lastReceipt.student.last_name} · {money(lastReceipt.total, school.currency)}</p></div>
+        <div className="flex gap-2">{(['print', 'download'] as const).map(action => <Button key={action} variant="outline" onClick={() => {
+          const payment = queued.find(p => p.receipt.receipt_number === lastReceipt.receipt_number);
+          const receipt = payment ? { ...payment.receipt, pending: payment.status !== 'synced', receipt_number: payment.officialNumber ?? payment.receipt.receipt_number } : lastReceipt;
+          void outputReceipt(school, receipt, userId, action).catch(error => toast.error(error instanceof Error ? error.message : 'Receipt could not be opened'));
+        }}>{action === 'print' ? <Printer /> : <Download />}{action === 'print' ? 'Print receipt' : 'Download PDF'}</Button>)}</div>
+      </section>}
       {count === 0 && (
         <div className="mb-4 rounded-xl border border-warning/40 bg-warning/10 p-4 text-sm">
           <span className="font-semibold">Add fee types first.</span> Before collecting, set up this term's fees (Tuition, General Levy, etc.) so parents can pay against them.{" "}
@@ -195,7 +205,7 @@ function Collect() {
         <h2 className="font-semibold">Receipts collected on this device</h2>
         {[...queued].reverse().map((payment) => <div key={payment.id} className="flex flex-wrap items-center justify-between gap-2 border-b py-3 text-sm">
           <div><div>{payment.receipt.student.first_name} {payment.receipt.student.last_name} · {money(payment.receipt.total, school.currency)}</div><div className="text-xs text-muted-foreground">{payment.officialNumber ?? payment.receipt.receipt_number} · {payment.status === 'synced' ? 'Synced' : 'Pending sync'}</div>{payment.error && <p className="text-xs text-destructive">{payment.error}</p>}</div>
-          <Button variant="outline" size="sm" onClick={() => receiptPdf(school, { ...payment.receipt, pending: payment.status !== 'synced', receipt_number: payment.officialNumber ?? payment.receipt.receipt_number }).save(`${payment.officialNumber ?? payment.receipt.receipt_number}.pdf`)}>PDF</Button>
+          <div className="flex gap-2">{(['print', 'download'] as const).map(action => <Button key={action} variant="outline" size="sm" onClick={() => { void outputReceipt(school, { ...payment.receipt, pending: payment.status !== 'synced', receipt_number: payment.officialNumber ?? payment.receipt.receipt_number }, userId, action).catch(error => toast.error(error instanceof Error ? error.message : 'Receipt could not be opened')); }}>{action === 'print' ? <Printer /> : <Download />}{action === 'print' ? 'Print' : 'PDF'}</Button>)}</div>
         </div>)}
       </section>}
     </>

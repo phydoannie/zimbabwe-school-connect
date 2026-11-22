@@ -85,6 +85,13 @@
       "when": 1795245458719,
       "tag": "0011_secure_school_receipt_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1795334228143,
+      "tag": "0012_offline_student_expense_sync",
+      "breakpoints": true
     }
   ]
 }

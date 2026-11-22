@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { queueEntry } from '@/lib/offline-entries';
 
 export const Route = createFileRoute("/_authenticated/app/expenses")({
   head: () => pageHead('Expenses', 'School expense register with accounts, vouchers and payment methods.'),
@@ -32,12 +33,20 @@ function Expenses() {
     const r=await query; if(r.error)throw r.error; return r.data??[];
   } });
   const { error, isLoading } = expenseQuery;
-  const data = offline.online ? expenseQuery.data ?? [] : (offline.pack?.cashData?.expenses ?? []).filter((e) => (!from || e.spent_on >= from) && (!to || e.spent_on <= to) && (!account || e.account === account) && (!category || e.category === category));
+  const pendingExpenses = offline.entries.filter(e => e.kind === 'expense' && e.status === 'pending');
+  const live = [...(expenseQuery.data ?? []), ...(offline.pack?.cashData?.expenses ?? []).filter(e => pendingExpenses.some(p => p.id === e.id) && !(expenseQuery.data ?? []).some(r => r.id === e.id))];
+  const data = (offline.online ? live : offline.pack?.cashData?.expenses ?? []).filter((e) => (!from || e.spent_on >= from) && (!to || e.spent_on <= to) && (!account || e.account === account) && (!category || e.category === category));
   const rows=data.filter(r => `${r.description} ${r.voucher_reference??''} ${r.method}`.toLowerCase().includes(search.toLowerCase()));
   async function save(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault(); if(!can('finance'))return; const f=new FormData(e.currentTarget); const amount=Number(f.get('amount'));
     if(!validExpenseAmount(amount)){toast.error('Enter an amount greater than zero');return;}
-    setBusy(true); try { const r=await supabase.from('expenses').insert({ school_id:school.id,recorded_by:userId,amount,spent_on:String(f.get('spent_on')),description:String(f.get('description')).trim(),account:String(f.get('account')),category:String(f.get('category')),method:String(f.get('method')),voucher_reference:String(f.get('voucher_reference'))||null });if(r.error)throw r.error; await qc.invalidateQueries();setOpen(false);toast.success('Expense recorded'); }catch(e){toast.error(e instanceof Error?e.message:'Expense could not be recorded');}finally{setBusy(false);}
+    const payload = { amount, spent_on: String(f.get('spent_on')), description: String(f.get('description')).trim(), account: String(f.get('account')), category: String(f.get('category')), method: String(f.get('method')), voucher_reference: String(f.get('voucher_reference') ?? '') };
+    if (busy) return;
+    setBusy(true); try {
+      if (!offline.online) await queueEntry({ id: crypto.randomUUID(), userId, schoolId: school.id, createdAt: new Date().toISOString(), status: 'pending', kind: 'expense', payload });
+      else { const result = await supabase.from('expenses').insert({ ...payload, school_id: school.id, recorded_by: userId }); if (result.error) throw result.error; }
+      await qc.invalidateQueries(); setOpen(false); toast.success(offline.online ? 'Expense recorded' : 'Expense saved on this device; pending sync');
+    } catch(e){toast.error(e instanceof Error?e.message:'Expense could not be recorded');}finally{setBusy(false);}
   }
   function csv(){
     const cells=(v:unknown)=>`"${String(v??'').replace(/^[=+@-]/,"'$&").replace(/"/g,'""')}"`;
@@ -45,7 +54,8 @@ function Expenses() {
     const url=URL.createObjectURL(new Blob([content],{type:'text/csv;charset=utf-8;'})); const a=document.createElement('a');a.href=url;a.download='expenses.csv';a.click();URL.revokeObjectURL(url);
   }
   if(!can('reports')&&!can('finance'))return <Empty>You do not have access to expenses.</Empty>;
-  return <><PageHeader title="Expenses" sub={`${rows.length} entries · ${money(rows.reduce((s,r)=>s+Number(r.amount),0),school.currency)}`} action={<div className="flex gap-2"><Button variant="outline" onClick={csv} disabled={!rows.length}><Download className="h-4 w-4"/>CSV</Button>{offline.online&&can('finance')&&<Button onClick={()=>setOpen(true)}><Plus className="h-4 w-4"/>Add expense</Button>}</div>} />
+  return <><PageHeader title="Expenses" sub={`${rows.length} entries · ${money(rows.reduce((s,r)=>s+Number(r.amount),0),school.currency)}`} action={<div className="flex gap-2"><Button variant="outline" onClick={csv} disabled={!rows.length}><Download className="h-4 w-4"/>CSV</Button>{can('finance')&&<Button disabled={!offline.online && !offline.pack?.cashData} onClick={()=>setOpen(true)}><Plus className="h-4 w-4"/>Add expense</Button>}</div>} />
+    {pendingExpenses.length > 0 && <section className="mb-4 border-b pb-3 text-sm"><h2 className="font-semibold">Expenses pending sync</h2>{pendingExpenses.map(e => <div key={e.id} className="py-2">{e.kind === 'expense' && `${e.payload.description} · ${money(e.payload.amount, school.currency)}`}{e.error && <p className="text-destructive">{e.error}</p>}</div>)}</section>}
     <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
       <Input aria-label="Search expenses" placeholder="Description or voucher" value={search} onChange={e=>setSearch(e.target.value)}/>
       <select aria-label="Filter account" className={selectCls} value={account} onChange={e=>setAccount(e.target.value)}><option value="">All accounts</option>{ACCOUNTS.map(a=><option key={a}>{a}</option>)}</select>
