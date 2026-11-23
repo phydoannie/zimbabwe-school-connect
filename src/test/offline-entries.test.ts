@@ -8,8 +8,11 @@ import type { Membership } from '@/lib/school-context';
 const calls = vi.hoisted(() => ({ rpc: vi.fn(), user: 'entry-user' }));
 vi.mock('@/integrations/supabase/client', () => ({ supabase: { auth: { getUser: async () => ({ data: { user: { id: calls.user } }, error: null }) }, rpc: calls.rpc } }));
 const schoolId = () => crypto.randomUUID();
+function fee(id: string, name: string, amount: number): CollectionPack['fees'][number] {
+  return { id, name, amount, account: name, applies_to: [], active: true, boarding_only: false, created_at: new Date().toISOString(), description: null, school_id: 'test-school', term: 1, year: 2026 };
+}
 function pack(school: string): CollectionPack {
-  return { key: `entry-user:${school}`, userId: 'entry-user', schoolId: school, expiresAt: Date.now() + 3600000, students: [], balances: [], fees: [{ id: 'tuition', name: 'Tuition', amount: 100, applies_to: [], active: true, boarding_only: false }, { id: 'levy', name: 'General Levy', amount: 40, applies_to: [], active: true, boarding_only: false }, { id: 'exam', name: 'Exam Fee', amount: 20, applies_to: [], active: true, boarding_only: false }] as CollectionPack['fees'], cashData: { entries: [], expenses: [], allocations: [] } };
+  return { key: `entry-user:${school}`, userId: 'entry-user', schoolId: school, expiresAt: Date.now() + 3600000, students: [], balances: [], fees: [fee('tuition', 'Tuition', 100), fee('levy', 'General Levy', 40), fee('exam', 'Exam Fee', 20)], cashData: { entries: [], expenses: [], allocations: [] } };
 }
 async function setup(school: string, role = 'bursar') {
   const member = { school_id: school, role, status: 'active', full_name: null, schools: { id: school }, subscription: { school_id: school, slug: 'test', status: 'active', subscription_ends_at: new Date(Date.now() + 86400000).toISOString() } } as Membership;
