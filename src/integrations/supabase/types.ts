@@ -188,6 +188,53 @@ export type Database = {
           },
         ]
       }
+      other_income: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          id: string
+          method: string
+          received_on: string
+          recorded_by: string
+          reference: string | null
+          school_id: string
+          source: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string
+          id?: string
+          method?: string
+          received_on?: string
+          recorded_by: string
+          reference?: string | null
+          school_id: string
+          source: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          id?: string
+          method?: string
+          received_on?: string
+          recorded_by?: string
+          reference?: string | null
+          school_id?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "other_income_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_allocations: {
         Row: {
           amount: number

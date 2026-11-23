@@ -21,17 +21,19 @@ export async function loadCashEntries(schoolId: string, from: string, to: string
   }
   let r = supabase.from("payment_receipts").select("id,receipt_number,paid_on,method,total,students(first_name,last_name)").eq("school_id", schoolId).eq("voided", false);
   let e = supabase.from("expenses").select("*").eq("school_id", schoolId);
+  let o = supabase.from("other_income").select("*").eq("school_id", schoolId);
   let a = supabase.from("payment_allocations").select("id,amount,receipt_id,fee_types(name,account),payment_receipts!inner(paid_on,voided,receipt_number,method,students(first_name,last_name))").eq("school_id", schoolId).eq("payment_receipts.voided", false);
-  if (from) { r = r.gte("paid_on", from); e = e.gte("spent_on", from); a = a.gte("payment_receipts.paid_on", from); }
-  if (to) { r = r.lte("paid_on", to); e = e.lte("spent_on", to); a = a.lte("payment_receipts.paid_on", to); }
+  if (from) { r = r.gte("paid_on", from); e = e.gte("spent_on", from); o = o.gte("received_on", from); a = a.gte("payment_receipts.paid_on", from); }
+  if (to) { r = r.lte("paid_on", to); e = e.lte("spent_on", to); o = o.lte("received_on", to); a = a.lte("payment_receipts.paid_on", to); }
   async function pages<T>(query: { range: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }> }) {
     const rows: T[] = [];
     for (let page = 0; ; page++) { const result = await query.range(page * 1000, page * 1000 + 999); if (result.error) throw result.error; rows.push(...(result.data ?? [])); if ((result.data?.length ?? 0) < 1000) break; }
     return { data: rows };
   }
-  const [rr, er, ar] = await Promise.all([pages(r.order('id')), pages(e.order('id')), pages(a.order('id'))]);
+  const [rr, er, ar, or] = await Promise.all([pages(r.order('id')), pages(e.order('id')), pages(a.order('id')), pages(o.order('id'))]);
   const entries: CashEntry[] = [
     ...(rr.data ?? []).map((x: any) => ({ id: x.id, date: x.paid_on, kind: "in" as const, detail: `Fees — ${x.students ? `${x.students.first_name} ${x.students.last_name}` : "Student"}`, ref: x.receipt_number, method: x.method, account: "Fees", amount: Number(x.total) })),
+    ...(or.data ?? []).map((x) => ({ id: x.id, date: x.received_on, kind: "in" as const, detail: `Income — ${x.source}${x.description ? ` — ${x.description}` : ""}`, ref: x.reference ?? "", method: x.method, account: x.source, amount: Number(x.amount) })),
     ...(er.data ?? []).map((x) => ({ id: x.id, date: x.spent_on, kind: "out" as const, detail: `${x.category} — ${x.description}`, ref: x.voucher_reference ?? "", method: x.method, account: x.account, amount: Number(x.amount) })),
   ];
   const allocations = (ar.data ?? []).map((x: any) => ({ date: x.payment_receipts.paid_on as string, amount: Number(x.amount), fee: x.fee_types?.name ?? "Other", account: x.fee_types?.account ?? "Other", id: x.id, ref: x.payment_receipts.receipt_number, method: x.payment_receipts.method, detail: `${x.fee_types?.name ?? "Fees"} — ${x.payment_receipts.students ? `${x.payment_receipts.students.first_name} ${x.payment_receipts.students.last_name}` : "Student"}` }));

@@ -65,3 +65,5 @@ export function money(n: number | string | null | undefined, cur = "USD") {
 export function sumAllocations(items: { amount: number }[]): number {
   return Math.round(items.reduce((s, i) => s + (Number(i.amount) || 0), 0) * 100) / 100;
 }
+
+export const INCOME_SOURCES = ["Rent", "Tuck shop", "Hall hire", "Donations", "Fundraising", "Uniform sales", "Bus hire", "Other"];

@@ -60,7 +60,7 @@ function Reports() {
       <div><Label htmlFor="rTo">To</Label><Input id="rTo" type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
     </div>
     <div className="mb-5 grid gap-3 sm:grid-cols-4">
-      {[["Fees collected", tin], ["Expenses", tout], ["Surplus / deficit", tin - tout], ["Outstanding debts", debtRows.reduce((s, r) => s + Number(r.balance), 0)]].map(([l, v]) => <div key={l as string} className="rounded-lg border bg-card p-4"><div className="text-xs text-muted-foreground">{l}</div><div className="text-lg font-semibold">{money(v as number, c)}</div></div>)}
+      {[["Total income", tin], ["Expenses", tout], ["Surplus / deficit", tin - tout], ["Outstanding debts", debtRows.reduce((s, r) => s + Number(r.balance), 0)]].map(([l, v]) => <div key={l as string} className="rounded-lg border bg-card p-4"><div className="text-xs text-muted-foreground">{l}</div><div className="text-lg font-semibold">{money(v as number, c)}</div></div>)}
     </div>
     <div className="mb-5 rounded-lg border bg-card p-4"><h3 className="mb-3 font-semibold">Income & expenditure by account</h3>
       {!accounts.length ? <p className="text-sm text-muted-foreground">Nothing recorded.</p> : <div className="overflow-x-auto"><table className="w-full text-sm"><thead className="text-muted-foreground"><tr><th className="py-2 text-left">Account</th><th className="py-2 text-right">Income</th><th className="py-2 text-right">Expenses</th><th className="py-2 text-right">Net</th></tr></thead>

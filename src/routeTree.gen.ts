@@ -22,10 +22,12 @@ import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAppAttendanceRouteImport } from './routes/_authenticated/app.attendance'
 import { Route as AuthenticatedAppCashbookRouteImport } from './routes/_authenticated/app.cashbook'
 import { Route as AuthenticatedAppCollectRouteImport } from './routes/_authenticated/app.collect'
+import { Route as AuthenticatedAppDayendRouteImport } from './routes/_authenticated/app.dayend'
 import { Route as AuthenticatedAppDebtorsRouteImport } from './routes/_authenticated/app.debtors'
 import { Route as AuthenticatedAppDevicesRouteImport } from './routes/_authenticated/app.devices'
 import { Route as AuthenticatedAppExpensesRouteImport } from './routes/_authenticated/app.expenses'
 import { Route as AuthenticatedAppFeesRouteImport } from './routes/_authenticated/app.fees'
+import { Route as AuthenticatedAppIncomeRouteImport } from './routes/_authenticated/app.income'
 import { Route as AuthenticatedAppReceiptsRouteImport } from './routes/_authenticated/app.receipts'
 import { Route as AuthenticatedAppReportsRouteImport } from './routes/_authenticated/app.reports'
 import { Route as AuthenticatedAppSettingsRouteImport } from './routes/_authenticated/app.settings'
@@ -98,6 +100,11 @@ const AuthenticatedAppCollectRoute = AuthenticatedAppCollectRouteImport.update({
   path: '/collect',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppDayendRoute = AuthenticatedAppDayendRouteImport.update({
+  id: '/dayend',
+  path: '/dayend',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
 const AuthenticatedAppDebtorsRoute = AuthenticatedAppDebtorsRouteImport.update({
   id: '/debtors',
   path: '/debtors',
@@ -117,6 +124,11 @@ const AuthenticatedAppExpensesRoute =
 const AuthenticatedAppFeesRoute = AuthenticatedAppFeesRouteImport.update({
   id: '/fees',
   path: '/fees',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppIncomeRoute = AuthenticatedAppIncomeRouteImport.update({
+  id: '/income',
+  path: '/income',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
 const AuthenticatedAppReceiptsRoute =
@@ -160,10 +172,12 @@ export interface FileRoutesByFullPath {
   '/app/attendance': typeof AuthenticatedAppAttendanceRoute
   '/app/cashbook': typeof AuthenticatedAppCashbookRoute
   '/app/collect': typeof AuthenticatedAppCollectRoute
+  '/app/dayend': typeof AuthenticatedAppDayendRoute
   '/app/debtors': typeof AuthenticatedAppDebtorsRoute
   '/app/devices': typeof AuthenticatedAppDevicesRoute
   '/app/expenses': typeof AuthenticatedAppExpensesRoute
   '/app/fees': typeof AuthenticatedAppFeesRoute
+  '/app/income': typeof AuthenticatedAppIncomeRoute
   '/app/receipts': typeof AuthenticatedAppReceiptsRoute
   '/app/reports': typeof AuthenticatedAppReportsRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
@@ -182,10 +196,12 @@ export interface FileRoutesByTo {
   '/app/attendance': typeof AuthenticatedAppAttendanceRoute
   '/app/cashbook': typeof AuthenticatedAppCashbookRoute
   '/app/collect': typeof AuthenticatedAppCollectRoute
+  '/app/dayend': typeof AuthenticatedAppDayendRoute
   '/app/debtors': typeof AuthenticatedAppDebtorsRoute
   '/app/devices': typeof AuthenticatedAppDevicesRoute
   '/app/expenses': typeof AuthenticatedAppExpensesRoute
   '/app/fees': typeof AuthenticatedAppFeesRoute
+  '/app/income': typeof AuthenticatedAppIncomeRoute
   '/app/receipts': typeof AuthenticatedAppReceiptsRoute
   '/app/reports': typeof AuthenticatedAppReportsRoute
   '/app/settings': typeof AuthenticatedAppSettingsRoute
@@ -207,10 +223,12 @@ export interface FileRoutesById {
   '/_authenticated/app/attendance': typeof AuthenticatedAppAttendanceRoute
   '/_authenticated/app/cashbook': typeof AuthenticatedAppCashbookRoute
   '/_authenticated/app/collect': typeof AuthenticatedAppCollectRoute
+  '/_authenticated/app/dayend': typeof AuthenticatedAppDayendRoute
   '/_authenticated/app/debtors': typeof AuthenticatedAppDebtorsRoute
   '/_authenticated/app/devices': typeof AuthenticatedAppDevicesRoute
   '/_authenticated/app/expenses': typeof AuthenticatedAppExpensesRoute
   '/_authenticated/app/fees': typeof AuthenticatedAppFeesRoute
+  '/_authenticated/app/income': typeof AuthenticatedAppIncomeRoute
   '/_authenticated/app/receipts': typeof AuthenticatedAppReceiptsRoute
   '/_authenticated/app/reports': typeof AuthenticatedAppReportsRoute
   '/_authenticated/app/settings': typeof AuthenticatedAppSettingsRoute
@@ -232,10 +250,12 @@ export interface FileRouteTypes {
     | '/app/attendance'
     | '/app/cashbook'
     | '/app/collect'
+    | '/app/dayend'
     | '/app/debtors'
     | '/app/devices'
     | '/app/expenses'
     | '/app/fees'
+    | '/app/income'
     | '/app/receipts'
     | '/app/reports'
     | '/app/settings'
@@ -254,10 +274,12 @@ export interface FileRouteTypes {
     | '/app/attendance'
     | '/app/cashbook'
     | '/app/collect'
+    | '/app/dayend'
     | '/app/debtors'
     | '/app/devices'
     | '/app/expenses'
     | '/app/fees'
+    | '/app/income'
     | '/app/receipts'
     | '/app/reports'
     | '/app/settings'
@@ -278,10 +300,12 @@ export interface FileRouteTypes {
     | '/_authenticated/app/attendance'
     | '/_authenticated/app/cashbook'
     | '/_authenticated/app/collect'
+    | '/_authenticated/app/dayend'
     | '/_authenticated/app/debtors'
     | '/_authenticated/app/devices'
     | '/_authenticated/app/expenses'
     | '/_authenticated/app/fees'
+    | '/_authenticated/app/income'
     | '/_authenticated/app/receipts'
     | '/_authenticated/app/reports'
     | '/_authenticated/app/settings'
@@ -393,6 +417,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppCollectRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/dayend': {
+      id: '/_authenticated/app/dayend'
+      path: '/dayend'
+      fullPath: '/app/dayend'
+      preLoaderRoute: typeof AuthenticatedAppDayendRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/debtors': {
       id: '/_authenticated/app/debtors'
       path: '/debtors'
@@ -419,6 +450,13 @@ declare module '@tanstack/react-router' {
       path: '/fees'
       fullPath: '/app/fees'
       preLoaderRoute: typeof AuthenticatedAppFeesRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/income': {
+      id: '/_authenticated/app/income'
+      path: '/income'
+      fullPath: '/app/income'
+      preLoaderRoute: typeof AuthenticatedAppIncomeRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/receipts': {
@@ -463,10 +501,12 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppAttendanceRoute: typeof AuthenticatedAppAttendanceRoute
   AuthenticatedAppCashbookRoute: typeof AuthenticatedAppCashbookRoute
   AuthenticatedAppCollectRoute: typeof AuthenticatedAppCollectRoute
+  AuthenticatedAppDayendRoute: typeof AuthenticatedAppDayendRoute
   AuthenticatedAppDebtorsRoute: typeof AuthenticatedAppDebtorsRoute
   AuthenticatedAppDevicesRoute: typeof AuthenticatedAppDevicesRoute
   AuthenticatedAppExpensesRoute: typeof AuthenticatedAppExpensesRoute
   AuthenticatedAppFeesRoute: typeof AuthenticatedAppFeesRoute
+  AuthenticatedAppIncomeRoute: typeof AuthenticatedAppIncomeRoute
   AuthenticatedAppReceiptsRoute: typeof AuthenticatedAppReceiptsRoute
   AuthenticatedAppReportsRoute: typeof AuthenticatedAppReportsRoute
   AuthenticatedAppSettingsRoute: typeof AuthenticatedAppSettingsRoute
@@ -478,10 +518,12 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppAttendanceRoute: AuthenticatedAppAttendanceRoute,
   AuthenticatedAppCashbookRoute: AuthenticatedAppCashbookRoute,
   AuthenticatedAppCollectRoute: AuthenticatedAppCollectRoute,
+  AuthenticatedAppDayendRoute: AuthenticatedAppDayendRoute,
   AuthenticatedAppDebtorsRoute: AuthenticatedAppDebtorsRoute,
   AuthenticatedAppDevicesRoute: AuthenticatedAppDevicesRoute,
   AuthenticatedAppExpensesRoute: AuthenticatedAppExpensesRoute,
   AuthenticatedAppFeesRoute: AuthenticatedAppFeesRoute,
+  AuthenticatedAppIncomeRoute: AuthenticatedAppIncomeRoute,
   AuthenticatedAppReceiptsRoute: AuthenticatedAppReceiptsRoute,
   AuthenticatedAppReportsRoute: AuthenticatedAppReportsRoute,
   AuthenticatedAppSettingsRoute: AuthenticatedAppSettingsRoute,
