@@ -1,0 +1,5 @@
+CREATE OR REPLACE FUNCTION public.audit_phase_one() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $f$ DECLARE sid uuid; BEGIN IF TG_TABLE_NAME='schools' THEN sid:=NEW.id; ELSE sid:=(to_jsonb(NEW)->>'school_id')::uuid; END IF; INSERT INTO public.audit_logs(school_id,user_id,action,record_type,record_id) VALUES (sid,auth.uid(),TG_TABLE_NAME||'.'||lower(TG_OP),TG_TABLE_NAME,NEW.id); RETURN NEW; END $f$;
+DROP POLICY IF EXISTS school_logo_insert ON storage.objects;
+DROP POLICY IF EXISTS school_logo_read ON storage.objects;
+CREATE POLICY school_logo_insert ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id='school-logos' AND EXISTS (SELECT 1 FROM public.schools s WHERE s.id::text=(storage.foldername(objects.name))[1] AND public.has_perm(s.id,'settings')));
+CREATE POLICY school_logo_read ON storage.objects FOR SELECT TO authenticated USING (bucket_id='school-logos' AND EXISTS (SELECT 1 FROM public.schools s WHERE s.id::text=(storage.foldername(objects.name))[1] AND public.has_perm(s.id,'view')));
