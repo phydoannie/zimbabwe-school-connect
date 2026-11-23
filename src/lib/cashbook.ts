@@ -1,3 +1,4 @@
+import { csvCell } from "@/lib/csv";
 export type CashEntry = { id: string; date: string; kind: "in" | "out"; detail: string; ref: string; method: string; account: string; amount: number };
 export type CashRow = CashEntry & { balance: number };
 
@@ -15,7 +16,6 @@ export function groupTotals<T>(rows: T[], key: (r: T) => string, amt: (r: T) => 
 }
 
 export function downloadCsv(name: string, rows: (string | number | null | undefined)[][]) {
-  const cell = (v: unknown) => `"${String(v ?? "").replace(/^[=+@-]/, "'$&").replace(/"/g, '""')}"`;
-  const url = URL.createObjectURL(new Blob([rows.map((r) => r.map(cell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8;" }));
+  const url = URL.createObjectURL(new Blob([rows.map((r) => r.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8;" }));
   const a = document.createElement("a"); a.href = url; a.download = name; a.click(); URL.revokeObjectURL(url);
 }
