@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Download, Printer } from "lucide-react";
@@ -53,6 +53,7 @@ function Reports() {
   });
   return <>
     <PageHeader title="Reports" sub={`${school.name} · ${from || "start"} to ${to || "today"}`} action={<div className="flex gap-2 print:hidden">
+      <Button asChild><Link to="/app/dayend">Day-end report</Link></Button>
       <Button variant="outline" onClick={() => window.print()}><Printer className="h-4 w-4" />Print</Button>
       <Button variant="outline" onClick={() => downloadCsv("account-summary.csv", [["Account", "Income", "Expenses", "Net"], ...accounts.map((a) => [a.name, a.i, a.o, a.net])])}><Download className="h-4 w-4" />CSV</Button></div>} />
     <div className="mb-5 grid max-w-md gap-3 grid-cols-2 print:hidden">
